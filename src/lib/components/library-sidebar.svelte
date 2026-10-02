@@ -1,5 +1,6 @@
 <script lang="ts">
   import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
+  import EllipsisIcon from '@lucide/svelte/icons/ellipsis'
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
@@ -8,6 +9,7 @@
 
   import * as Avatar from '#lib/components/ui/avatar'
   import * as Collapsible from '#lib/components/ui/collapsible'
+  import * as DropdownMenu from '#lib/components/ui/dropdown-menu'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { Spinner } from '#lib/components/ui/spinner'
   import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
@@ -38,6 +40,27 @@
             </span>
           </div>
         </Sidebar.MenuButton>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            {#snippet child({ props })}
+              <Sidebar.MenuAction {...props} class="top-3.5" aria-label="Library options">
+                <EllipsisIcon />
+              </Sidebar.MenuAction>
+            {/snippet}
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content side="bottom" align="end" class="w-48">
+            {#if library.root}
+              <DropdownMenu.Item disabled={library.loading} onclick={() => library.load()}>
+                <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
+                Rescan folder
+              </DropdownMenu.Item>
+            {/if}
+            <DropdownMenu.Item onclick={() => library.chooseFolder()}>
+              <FolderOpenIcon />
+              {library.root ? 'Change folder…' : 'Choose tabs folder…'}
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </Sidebar.MenuItem>
     </Sidebar.Menu>
   </Sidebar.Header>
@@ -131,22 +154,4 @@
     {/if}
   </Sidebar.Content>
 
-  <Sidebar.Footer>
-    <Sidebar.Menu>
-      {#if library.root}
-        <Sidebar.MenuItem>
-          <Sidebar.MenuButton onclick={() => !library.loading && library.load()}>
-            <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
-            <span>Rescan folder</span>
-          </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
-      {/if}
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton onclick={() => library.chooseFolder()}>
-          <FolderOpenIcon />
-          <span>{library.root ? 'Change folder…' : 'Choose tabs folder…'}</span>
-        </Sidebar.MenuButton>
-      </Sidebar.MenuItem>
-    </Sidebar.Menu>
-  </Sidebar.Footer>
 </Sidebar.Root>
