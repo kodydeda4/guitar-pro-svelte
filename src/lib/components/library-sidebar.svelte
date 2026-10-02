@@ -2,7 +2,6 @@
   import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
-  import LayoutGridIcon from '@lucide/svelte/icons/layout-grid'
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
   import DiscIcon from '@lucide/svelte/icons/disc-3'
   import UserIcon from '@lucide/svelte/icons/user'
@@ -146,13 +145,6 @@
         <Sidebar.MenuButton onclick={() => library.chooseFolder()}>
           <FolderOpenIcon />
           <span>{library.root ? 'Change folder…' : 'Choose tabs folder…'}</span>
-        </Sidebar.MenuButton>
-      </Sidebar.MenuItem>
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton>
-          {#snippet child({ props })}
-            <a href="#/components" {...props}><LayoutGridIcon /><span>Component gallery</span></a>
-          {/snippet}
         </Sidebar.MenuButton>
       </Sidebar.MenuItem>
     </Sidebar.Menu>
