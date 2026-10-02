@@ -106,7 +106,7 @@
          column sticks to the left, so only the track rows scroll. -->
     <div
       bind:this={timeline}
-      class="overflow-auto border-t text-sm"
+      class={cn('overflow-auto border-t text-sm', session.loading && 'pointer-events-none')}
       style:height="{ui.tracksHeight}px"
     >
       <div class="min-w-full" style:width="{MIXER_WIDTH + score.barCount * CELL}px">

@@ -17,16 +17,26 @@ class Session {
   mix = $state<TrackMix[]>([])
   loading = $state(false)
 
-  /** Resets per-song state when a new score starts loading. */
-  reset(): void {
-    this.score = null
-    this.visibleTracks = [0]
-    this.mix = []
+  /**
+   * A new song started loading. The previous score is kept until the new one arrives so the
+   * tracks panel doesn't disappear and reappear on every switch.
+   */
+  startLoading(): void {
+    this.loading = true
   }
 
   loaded(score: ScoreInfo): void {
     this.score = score
+    this.visibleTracks = [0]
     this.mix = score.tracks.map(() => ({ muted: false, solo: false, volume: 1 }))
+    this.loading = false
+  }
+
+  /** The song couldn't be opened, so nothing about the previous one applies any more. */
+  failed(): void {
+    this.score = null
+    this.visibleTracks = [0]
+    this.mix = []
     this.loading = false
   }
 

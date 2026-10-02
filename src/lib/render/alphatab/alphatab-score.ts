@@ -24,6 +24,8 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     currentBar: 1
   }
   readonly #listeners = new Set<(state: PlaybackState) => void>()
+  /** Set by `load()` so the new score starts at the top once it has been drawn. */
+  #scrollToTopOnRender = false
 
   /** `scrollElement` is the scroll container the cursor keeps in view during playback. */
   constructor(element: HTMLElement, scrollElement: HTMLElement) {
@@ -43,6 +45,16 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     settings.player.scrollOffsetY = -40
     this.#api = new AlphaTabApi(element, settings)
 
+    // alphaTab animates a scroll to the cursor after every render; a freshly opened song should
+    // start at the top of the page (title and all) instead. Scrolling through alphaTab with no
+    // duration also cancels its running animation.
+    this.#api.postRenderFinished.on(() => {
+      if (!this.#scrollToTopOnRender) return
+      this.#scrollToTopOnRender = false
+      const ui = this.#api.uiFacade
+      ui.scrollToY(ui.getScrollContainer(), 0, 0)
+    })
+
     this.#api.playerReady.on(() => this.#update({ ready: true }))
     // After switching songs the synth may already be warm; ready again once the new midi is in.
     this.#api.midiLoaded.on(() => {
@@ -61,12 +73,17 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     this.#api.stop()
     this.#update({ ready: false, playing: false, currentTime: 0, endTime: 0, currentBar: 1 })
     return new Promise((resolve, reject) => {
+      // `scoreLoaded` replays the already-loaded score as soon as a listener registers; ignore
+      // anything that arrives before this load has actually started.
+      let started = false
       const offLoaded = this.#api.scoreLoaded.on((score) => {
+        if (!started) return
         cleanup()
         this.#score = score
         resolve(toScoreInfo(score))
       })
       const offError = this.#api.error.on((error) => {
+        if (!started) return
         cleanup()
         reject(error)
       })
@@ -74,6 +91,8 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
         offLoaded()
         offError()
       }
+      started = true
+      this.#scrollToTopOnRender = true
       if (!this.#api.load(data, [0])) {
         cleanup()
         reject(new Error('Unsupported file format'))

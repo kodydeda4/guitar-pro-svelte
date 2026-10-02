@@ -12,7 +12,8 @@
 
   let { song }: { song: LibrarySong } = $props()
 
-  const score = $derived(session.score)
+  // While the next song loads, session.score still holds the previous one.
+  const score = $derived(session.loading ? null : session.score)
   const trackLabel = $derived(
     session.visibleTracks.length > 1
       ? `${session.visibleTracks.length} tracks`

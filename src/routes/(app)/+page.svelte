@@ -2,6 +2,7 @@
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
   import Music4Icon from '@lucide/svelte/icons/music-4'
   import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert'
+  import { untrack } from 'svelte'
 
   import ScoreView from '#lib/components/score-view.svelte'
   import SongHeader from '#lib/components/song-header.svelte'
@@ -21,16 +22,17 @@
     const song = library.selected
     if (!song) return
     let cancelled = false
-    session.loading = true
     songError = null
-    session.reset()
+    session.startLoading()
+    // Start each song at the top of the score.
+    untrack(() => scrollElement?.scrollTo({ top: 0 }))
     library.readSong(song).then(
       (data) => {
         if (!cancelled) songData = data
       },
       (error) => {
         if (cancelled) return
-        session.loading = false
+        session.failed()
         songError = error instanceof Error ? error.message : String(error)
       }
     )
@@ -96,7 +98,7 @@
         bind:player={session.player}
         onloaded={(info) => session.loaded(info)}
         onerror={(error) => {
-          session.loading = false
+          session.failed()
           songError = `Couldn't open this file: ${error.message}`
         }}
       />
