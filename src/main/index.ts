@@ -4,8 +4,11 @@ import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import type { LibrarySnapshot } from '../shared/library'
+import { handleArtworkRequests, registerArtworkScheme } from './artwork'
 import { isInside, scanLibrary } from './library'
 import { loadSettings, saveSettings } from './settings'
+
+registerArtworkScheme()
 
 function createWindow(): void {
   // Create the browser window.
@@ -63,6 +66,7 @@ app.whenReady().then(() => {
   })
 
   registerLibraryHandlers()
+  handleArtworkRequests()
 
   createWindow()
 

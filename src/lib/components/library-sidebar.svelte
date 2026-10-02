@@ -4,11 +4,14 @@
   import GuitarIcon from '@lucide/svelte/icons/guitar'
   import LayoutGridIcon from '@lucide/svelte/icons/layout-grid'
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
+  import DiscIcon from '@lucide/svelte/icons/disc-3'
   import UserIcon from '@lucide/svelte/icons/user'
 
+  import * as Avatar from '#lib/components/ui/avatar'
   import * as Collapsible from '#lib/components/ui/collapsible'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { Spinner } from '#lib/components/ui/spinner'
+  import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
   import type { Library } from '#lib/library/library.svelte'
 
   let { library }: { library: Library } = $props()
@@ -66,8 +69,15 @@
               <Sidebar.MenuItem>
                 <Collapsible.Trigger>
                   {#snippet child({ props })}
-                    <Sidebar.MenuButton {...props}>
-                      <UserIcon />
+                    <Sidebar.MenuButton {...props} class="h-9">
+                      <Avatar.Root size="sm">
+                        <Avatar.Image
+                          src={artistArtworkUrl(group.artist, group.albums.find((a) => a.album)?.album)}
+                          alt=""
+                          class="object-cover"
+                        />
+                        <Avatar.Fallback><UserIcon class="size-3.5" /></Avatar.Fallback>
+                      </Avatar.Root>
                       <span class="truncate">{group.artist}</span>
                       <ChevronRightIcon
                         class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90"
@@ -80,8 +90,16 @@
                   <Sidebar.MenuSub>
                     {#each group.albums as album (album.album)}
                       {#if album.album}
-                        <li class="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">
-                          {album.album}
+                        <li class="flex items-center gap-2 px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">
+                          <Avatar.Root class="size-8 rounded-sm after:rounded-sm">
+                            <Avatar.Image
+                              src={albumArtworkUrl(group.artist, album.album)}
+                              alt=""
+                              class="rounded-sm object-cover"
+                            />
+                            <Avatar.Fallback class="rounded-sm"><DiscIcon class="size-4" /></Avatar.Fallback>
+                          </Avatar.Root>
+                          <span class="line-clamp-2">{album.album}</span>
                         </li>
                       {/if}
                       {#each album.songs as song (song.id)}

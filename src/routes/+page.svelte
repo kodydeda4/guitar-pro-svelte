@@ -7,6 +7,7 @@
   import ScoreView from '#lib/components/score-view.svelte'
   import Transport from '#lib/components/transport.svelte'
   import * as Alert from '#lib/components/ui/alert'
+  import * as Avatar from '#lib/components/ui/avatar'
   import { Badge } from '#lib/components/ui/badge'
   import { Button } from '#lib/components/ui/button'
   import * as Empty from '#lib/components/ui/empty'
@@ -14,6 +15,7 @@
   import { Separator } from '#lib/components/ui/separator'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { Spinner } from '#lib/components/ui/spinner'
+  import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
   import { Library } from '#lib/library/library.svelte'
   import type { ScoreInfo, ScorePlayer } from '#lib/render/types'
 
@@ -65,6 +67,15 @@
       <Sidebar.Trigger />
       <Separator orientation="vertical" class="mr-2 h-4 data-vertical:self-center" />
       {#if library.selected}
+        {@const song = library.selected}
+        <Avatar.Root class="size-9 rounded-sm after:rounded-sm">
+          <Avatar.Image
+            src={song.album ? albumArtworkUrl(song.artist, song.album) : artistArtworkUrl(song.artist)}
+            alt=""
+            class="rounded-sm object-cover"
+          />
+          <Avatar.Fallback class="rounded-sm"><Music4Icon class="size-4" /></Avatar.Fallback>
+        </Avatar.Root>
         <div class="min-w-0 flex-1 leading-tight">
           <div class="truncate text-sm font-semibold">{score?.title || library.selected.title}</div>
           <div class="truncate text-xs text-muted-foreground">
