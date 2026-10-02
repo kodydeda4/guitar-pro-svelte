@@ -3,5 +3,7 @@ export const ui = $state({
   /** Whether the library panel next to the rail is shown. */
   libraryOpen: true,
   /** Whether the tracks panel under the score is expanded. */
-  tracksOpen: true
+  tracksOpen: true,
+  /** Height of the expanded tracks panel's content, in px (drag its top edge to resize). */
+  tracksHeight: 260
 })
