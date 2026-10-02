@@ -18,12 +18,12 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     // Hide the native title bar and draw our own header instead.
-    // macOS keeps the traffic lights, positioned to sit centered in the 48px title bar.
+    // macOS keeps the traffic lights, positioned to sit centered in the 44px title bar.
     // Windows/Linux get native window controls overlaid on the top-right of the header.
     titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 16, y: 17 },
+    trafficLightPosition: { x: 16, y: 15 },
     ...(process.platform !== 'darwin'
-      ? { titleBarOverlay: { color: '#00000000', symbolColor: '#a1a1aa', height: 48 } }
+      ? { titleBarOverlay: { color: '#00000000', symbolColor: '#a1a1aa', height: 44 } }
       : {}),
     backgroundColor: '#0a0a0a',
     ...(process.platform === 'linux' ? { icon } : {}),

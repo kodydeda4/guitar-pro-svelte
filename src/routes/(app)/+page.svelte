@@ -4,6 +4,7 @@
   import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert'
 
   import ScoreView from '#lib/components/score-view.svelte'
+  import SongHeader from '#lib/components/song-header.svelte'
   import * as Alert from '#lib/components/ui/alert'
   import { Button } from '#lib/components/ui/button'
   import * as Empty from '#lib/components/ui/empty'
@@ -36,6 +37,10 @@
     return () => (cancelled = true)
   })
 </script>
+
+{#if library.selected}
+  <SongHeader song={library.selected} />
+{/if}
 
 <main bind:this={scrollElement} class="flex-1 overflow-auto bg-muted/40 p-6">
   {#if !library.available}
