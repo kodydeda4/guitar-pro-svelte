@@ -16,7 +16,13 @@ import type { PlaybackState, ScoreInfo, ScorePlayer, ScoreRenderer } from '../ty
 export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   readonly #api: AlphaTabApi
   #score: model.Score | null = null
-  #state: PlaybackState = { ready: false, playing: false, currentTime: 0, endTime: 0, currentBar: 1 }
+  #state: PlaybackState = {
+    ready: false,
+    playing: false,
+    currentTime: 0,
+    endTime: 0,
+    currentBar: 1
+  }
   readonly #listeners = new Set<(state: PlaybackState) => void>()
 
   /** `scrollElement` is the scroll container the cursor keeps in view during playback. */
@@ -48,9 +54,7 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     this.#api.playerPositionChanged.on((e) =>
       this.#update({ currentTime: e.currentTime, endTime: e.endTime })
     )
-    this.#api.playedBeatChanged.on((beat) =>
-      this.#update({ currentBar: beat.voice.bar.index + 1 })
-    )
+    this.#api.playedBeatChanged.on((beat) => this.#update({ currentBar: beat.voice.bar.index + 1 }))
   }
 
   load(data: Uint8Array): Promise<ScoreInfo> {
@@ -77,9 +81,9 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     })
   }
 
-  showTrack(index: number): void {
-    const track = this.#score?.tracks[index]
-    if (track) this.#api.renderTracks([track])
+  showTracks(indices: number[]): void {
+    const tracks = this.#tracks(indices)
+    if (tracks.length > 0) this.#api.renderTracks(tracks)
   }
 
   playPause(): void {
@@ -106,6 +110,24 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     this.#api.countInVolume = enabled ? 1 : 0
   }
 
+  seekToBar(bar: number): void {
+    const masterBar = this.#score?.masterBars[bar]
+    const ticks = this.#api.tickCache
+    if (masterBar && ticks) this.#api.tickPosition = ticks.getMasterBarStart(masterBar)
+  }
+
+  setTrackMute(index: number, muted: boolean): void {
+    this.#api.changeTrackMute(this.#tracks([index]), muted)
+  }
+
+  setTrackSolo(index: number, solo: boolean): void {
+    this.#api.changeTrackSolo(this.#tracks([index]), solo)
+  }
+
+  setTrackVolume(index: number, volume: number): void {
+    this.#api.changeTrackVolume(this.#tracks([index]), volume)
+  }
+
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void {
     this.#listeners.add(listener)
     listener(this.#state)
@@ -115,6 +137,11 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   destroy(): void {
     this.#listeners.clear()
     this.#api.destroy()
+  }
+
+  #tracks(indices: number[]): model.Track[] {
+    const all = this.#score?.tracks ?? []
+    return indices.map((i) => all[i]).filter((t): t is model.Track => t !== undefined)
   }
 
   #update(patch: Partial<PlaybackState>): void {
@@ -130,6 +157,17 @@ function toScoreInfo(score: model.Score): ScoreInfo {
     album: score.album,
     tempo: score.tempo,
     barCount: score.masterBars.length,
-    tracks: score.tracks.map((track) => ({ index: track.index, name: track.name }))
+    tracks: score.tracks.map((track) => ({
+      index: track.index,
+      name: track.name,
+      color: track.color.rgba,
+      isPercussion: track.staves.some((staff) => staff.isPercussion),
+      activeBars: score.masterBars.map((_, bar) =>
+        track.staves.some((staff) => staff.bars[bar] && !staff.bars[bar].isRestOnly)
+      )
+    })),
+    sections: score.masterBars.flatMap((masterBar, bar) =>
+      masterBar.section ? [{ bar, name: masterBar.section.text }] : []
+    )
   }
 }

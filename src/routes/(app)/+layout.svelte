@@ -15,12 +15,18 @@
 
   const showLibrary = $derived(ui.libraryOpen && page.route.id === '/(app)')
 
-  // ⌘, (Ctrl+, on Windows/Linux) opens Settings, like other desktop apps.
+  // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
+  //   ⌘,   open Settings
+  //   ⌘⇧Y  expand/collapse the tracks panel
   function onkeydown(event: KeyboardEvent): void {
     const modifier = window.electron?.process.platform === 'darwin' ? event.metaKey : event.ctrlKey
-    if (modifier && event.key === ',') {
+    if (!modifier) return
+    if (event.key === ',') {
       event.preventDefault()
       goto('#/settings')
+    } else if (event.shiftKey && event.code === 'KeyY') {
+      event.preventDefault()
+      ui.tracksOpen = !ui.tracksOpen
     }
   }
 </script>

@@ -5,6 +5,7 @@
 
   import ScoreView from '#lib/components/score-view.svelte'
   import SongHeader from '#lib/components/song-header.svelte'
+  import TracksPanel from '#lib/components/tracks-panel.svelte'
   import * as Alert from '#lib/components/ui/alert'
   import { Button } from '#lib/components/ui/button'
   import * as Empty from '#lib/components/ui/empty'
@@ -22,8 +23,7 @@
     let cancelled = false
     session.loading = true
     songError = null
-    session.score = null
-    session.track = 0
+    session.reset()
     library.readSong(song).then(
       (data) => {
         if (!cancelled) songData = data
@@ -91,13 +91,10 @@
     <div class:hidden={!library.selected}>
       <ScoreView
         data={songData}
-        track={session.track}
+        tracks={session.visibleTracks}
         {scrollElement}
         bind:player={session.player}
-        onloaded={(info) => {
-          session.score = info
-          session.loading = false
-        }}
+        onloaded={(info) => session.loaded(info)}
         onerror={(error) => {
           session.loading = false
           songError = `Couldn't open this file: ${error.message}`
@@ -106,3 +103,7 @@
     </div>
   {/if}
 </main>
+
+{#if library.selected && session.score}
+  <TracksPanel score={session.score} />
+{/if}

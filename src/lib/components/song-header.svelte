@@ -13,7 +13,11 @@
   let { song }: { song: LibrarySong } = $props()
 
   const score = $derived(session.score)
-  const trackLabel = $derived(score?.tracks[session.track]?.name || `Track ${session.track + 1}`)
+  const trackLabel = $derived(
+    session.visibleTracks.length > 1
+      ? `${session.visibleTracks.length} tracks`
+      : score?.tracks[session.visibleTracks[0]]?.name || `Track ${session.visibleTracks[0] + 1}`
+  )
 </script>
 
 <!-- Toolbar above the score: the open song, playback controls, and track picker. -->
@@ -56,8 +60,8 @@
       {#if score.tracks.length > 1}
         <Select.Root
           type="single"
-          value={String(session.track)}
-          onValueChange={(value) => (session.track = Number(value))}
+          value={session.visibleTracks.length === 1 ? String(session.visibleTracks[0]) : ''}
+          onValueChange={(value) => session.showOnly(Number(value))}
         >
           <Select.Trigger size="sm" class="w-44">
             <span class="truncate">{trackLabel}</span>

@@ -1,12 +1,62 @@
 import type { ScoreInfo, ScorePlayer } from '#lib/render/types'
 
-/** The open song: written by the library page's score view, shown in the title bar. */
+export interface TrackMix {
+  muted: boolean
+  solo: boolean
+  /** 0–1, relative to the track's volume in the file. */
+  volume: number
+}
+
+/** The open song: written by the library page's score view, shown in the header and panels. */
 class Session {
   score = $state<ScoreInfo | null>(null)
   player = $state<ScorePlayer | null>(null)
-  /** Index of the track being displayed. */
-  track = $state(0)
+  /** Indices of the tracks drawn in the score. */
+  visibleTracks = $state<number[]>([0])
+  /** Mixer settings per track index. */
+  mix = $state<TrackMix[]>([])
   loading = $state(false)
+
+  /** Resets per-song state when a new score starts loading. */
+  reset(): void {
+    this.score = null
+    this.visibleTracks = [0]
+    this.mix = []
+  }
+
+  loaded(score: ScoreInfo): void {
+    this.score = score
+    this.mix = score.tracks.map(() => ({ muted: false, solo: false, volume: 1 }))
+    this.loading = false
+  }
+
+  showOnly(index: number): void {
+    this.visibleTracks = [index]
+  }
+
+  /** Toggles a track in the score; at least one track always stays visible. */
+  toggleVisible(index: number): void {
+    const visible = this.visibleTracks.includes(index)
+    if (visible && this.visibleTracks.length === 1) return
+    this.visibleTracks = visible
+      ? this.visibleTracks.filter((i) => i !== index)
+      : [...this.visibleTracks, index].sort((a, b) => a - b)
+  }
+
+  setMute(index: number, muted: boolean): void {
+    this.mix[index].muted = muted
+    this.player?.setTrackMute(index, muted)
+  }
+
+  setSolo(index: number, solo: boolean): void {
+    this.mix[index].solo = solo
+    this.player?.setTrackSolo(index, solo)
+  }
+
+  setVolume(index: number, volume: number): void {
+    this.mix[index].volume = volume
+    this.player?.setTrackVolume(index, volume)
+  }
 }
 
 export const session = new Session()

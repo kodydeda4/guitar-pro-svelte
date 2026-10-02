@@ -7,14 +7,26 @@ export interface ScoreInfo {
   album: string
   tempo: number
   barCount: number
-  tracks: { index: number; name: string }[]
+  tracks: TrackInfo[]
+  /** Section markers ("Intro", "Main Riff", …) by 0-based bar index. */
+  sections: { bar: number; name: string }[]
+}
+
+export interface TrackInfo {
+  index: number
+  name: string
+  /** CSS color from the file (Guitar Pro assigns one per track). */
+  color: string
+  isPercussion: boolean
+  /** Per bar: whether this track plays anything there. */
+  activeBars: boolean[]
 }
 
 export interface ScoreRenderer {
   /** Parses a Guitar Pro file and renders its first track. */
   load(data: Uint8Array): Promise<ScoreInfo>
-  /** Re-renders showing only the given track. */
-  showTrack(index: number): void
+  /** Re-renders showing only the given tracks (in score order). */
+  showTracks(indices: number[]): void
   destroy(): void
 }
 
@@ -38,6 +50,12 @@ export interface ScorePlayer {
   setLooping(looping: boolean): void
   setMetronome(enabled: boolean): void
   setCountIn(enabled: boolean): void
+  /** Moves playback to the start of a 0-based bar. */
+  seekToBar(bar: number): void
+  setTrackMute(index: number, muted: boolean): void
+  setTrackSolo(index: number, solo: boolean): void
+  /** 0–1, relative to the track's own volume in the file. */
+  setTrackVolume(index: number, volume: number): void
   /** Called whenever playback state changes; returns an unsubscribe function. */
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void
 }

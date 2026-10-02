@@ -4,7 +4,7 @@
 
   let {
     data,
-    track = 0,
+    tracks = [0],
     scrollElement,
     player = $bindable(null),
     onloaded,
@@ -12,7 +12,8 @@
   }: {
     /** Raw Guitar Pro file bytes; changing it loads a new score. */
     data: Uint8Array | null
-    track?: number
+    /** Indices of the tracks to draw. */
+    tracks?: number[]
     /** The scroll container that playback keeps the cursor visible in. */
     scrollElement: HTMLElement
     /** Exposes playback controls for the loaded score. */
@@ -24,6 +25,8 @@
   let element: HTMLDivElement
   let score: AlphaTabScore | null = null
   let loadedData: Uint8Array | null = null
+  /** Which tracks are currently drawn; loading a score always draws track 0. */
+  let shown = '0'
 
   $effect(() => {
     score = new AlphaTabScore(element, scrollElement)
@@ -39,6 +42,7 @@
   $effect(() => {
     if (!score || !data || data === loadedData) return
     loadedData = data
+    shown = '0'
     score.load(data).then(
       (info) => onloaded?.(info),
       (error) => onerror?.(error instanceof Error ? error : new Error(String(error)))
@@ -46,7 +50,10 @@
   })
 
   $effect(() => {
-    if (score && loadedData) score.showTrack(track)
+    const key = tracks.join(',')
+    if (!score || !loadedData || key === shown) return
+    shown = key
+    score.showTracks([...tracks])
   })
 </script>
 
