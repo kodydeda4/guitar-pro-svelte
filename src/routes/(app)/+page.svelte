@@ -4,24 +4,14 @@
   import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert'
 
   import ScoreView from '#lib/components/score-view.svelte'
-  import Transport from '#lib/components/transport.svelte'
   import * as Alert from '#lib/components/ui/alert'
-  import * as Avatar from '#lib/components/ui/avatar'
-  import { Badge } from '#lib/components/ui/badge'
   import { Button } from '#lib/components/ui/button'
   import * as Empty from '#lib/components/ui/empty'
-  import * as Select from '#lib/components/ui/select'
-  import { Spinner } from '#lib/components/ui/spinner'
-  import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
   import { library } from '#lib/library/library.svelte'
-  import type { ScoreInfo, ScorePlayer } from '#lib/render/types'
+  import { session } from '#lib/session.svelte'
 
   let songData = $state<Uint8Array | null>(null)
-  let score = $state<ScoreInfo | null>(null)
-  let track = $state(0)
-  let loadingSong = $state(false)
   let songError = $state<string | null>(null)
-  let player = $state<ScorePlayer | null>(null)
   let scrollElement = $state<HTMLElement>()
 
   // Read the selected song's file whenever the selection changes.
@@ -29,76 +19,23 @@
     const song = library.selected
     if (!song) return
     let cancelled = false
-    loadingSong = true
+    session.loading = true
     songError = null
-    score = null
-    track = 0
+    session.score = null
+    session.track = 0
     library.readSong(song).then(
       (data) => {
         if (!cancelled) songData = data
       },
       (error) => {
         if (cancelled) return
-        loadingSong = false
+        session.loading = false
         songError = error instanceof Error ? error.message : String(error)
       }
     )
     return () => (cancelled = true)
   })
-
-  const trackValue = $derived(String(track))
-  const trackLabel = $derived(score?.tracks[track]?.name || `Track ${track + 1}`)
 </script>
-
-<header class="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
-  {#if library.selected}
-    {@const song = library.selected}
-    <Avatar.Root class="size-9 rounded-sm after:rounded-sm">
-      <Avatar.Image
-        src={song.album ? albumArtworkUrl(song.artist, song.album) : artistArtworkUrl(song.artist)}
-        alt=""
-        class="rounded-sm object-cover"
-      />
-      <Avatar.Fallback class="rounded-sm"><Music4Icon class="size-4" /></Avatar.Fallback>
-    </Avatar.Root>
-    <div class="min-w-0 flex-1 leading-tight">
-      <div class="truncate text-sm font-semibold">{score?.title || library.selected.title}</div>
-      <div class="truncate text-xs text-muted-foreground">
-        {score?.artist || library.selected.artist}{library.selected.album
-          ? ` · ${library.selected.album}`
-          : ''}
-      </div>
-    </div>
-    {#if score}
-      <Transport {player} barCount={score.barCount} />
-    {/if}
-    <div class="flex flex-1 items-center justify-end gap-2">
-      {#if loadingSong}<Spinner />{/if}
-      {#if score}
-        <Badge variant="secondary">♩ = {score.tempo}</Badge>
-        <Badge variant="outline">{score.barCount} bars</Badge>
-        {#if score.tracks.length > 1}
-          <Select.Root
-            type="single"
-            value={trackValue}
-            onValueChange={(value) => (track = Number(value))}
-          >
-            <Select.Trigger size="sm" class="w-48">
-              <span class="truncate">{trackLabel}</span>
-            </Select.Trigger>
-            <Select.Content>
-              {#each score.tracks as t (t.index)}
-                <Select.Item value={String(t.index)} label={t.name || `Track ${t.index + 1}`} />
-              {/each}
-            </Select.Content>
-          </Select.Root>
-        {/if}
-      {/if}
-    </div>
-  {:else}
-    <span class="text-sm font-semibold">Kody's Guitar Pro</span>
-  {/if}
-</header>
 
 <main bind:this={scrollElement} class="flex-1 overflow-auto bg-muted/40 p-6">
   {#if !library.available}
@@ -149,15 +86,15 @@
     <div class:hidden={!library.selected}>
       <ScoreView
         data={songData}
-        {track}
+        track={session.track}
         {scrollElement}
-        bind:player
+        bind:player={session.player}
         onloaded={(info) => {
-          score = info
-          loadingSong = false
+          session.score = info
+          session.loading = false
         }}
         onerror={(error) => {
-          loadingSong = false
+          session.loading = false
           songError = `Couldn't open this file: ${error.message}`
         }}
       />
