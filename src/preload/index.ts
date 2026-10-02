@@ -1,8 +1,15 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { AppApi } from '../shared/library'
 
-// Custom APIs for renderer
-const api = {}
+// App APIs for the renderer. Each call goes to an ipcMain.handle(...) in src/main.
+const api: AppApi = {
+  library: {
+    get: () => ipcRenderer.invoke('library:get'),
+    chooseFolder: () => ipcRenderer.invoke('library:choose-folder'),
+    readSong: (path) => ipcRenderer.invoke('library:read-song', path)
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

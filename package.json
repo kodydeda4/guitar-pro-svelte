@@ -22,12 +22,14 @@
     "prepare": "svelte-kit sync || echo ''"
   },
   "dependencies": {
+    "@coderline/alphatab": "^1.8.4",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "electron-updater": "^6.3.9",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@coderline/alphatab-vite": "^1.8.4",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
@@ -71,5 +73,8 @@
   "imports": {
     "#lib": "./src/lib/index.js",
     "#lib/*": "./src/lib/*"
+  },
+  "patchedDependencies": {
+    "@coderline/alphatab@1.8.4": "patches/@coderline%2Falphatab@1.8.4.patch"
   }
 }

@@ -140,3 +140,19 @@
 		@apply font-sans;
 	}
 }
+
+/* alphaTab playback cursor and highlighting (inside the white score page). */
+.at-cursor-bar {
+	background: rgb(255 214 0 / 0.25);
+}
+.at-cursor-beat {
+	width: 3px;
+	background: rgb(37 99 235 / 0.8);
+}
+.at-selection div {
+	background: rgb(37 99 235 / 0.1);
+}
+.at-highlight * {
+	fill: rgb(37 99 235);
+	stroke: rgb(37 99 235);
+}

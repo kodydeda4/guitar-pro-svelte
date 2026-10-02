@@ -1,0 +1,26 @@
+diff --git a/dist/alphaTab.core.mjs b/dist/alphaTab.core.mjs
+index b6203da6066c95efcf66298fe48a690f144597a5..4e4b16229b43fcd38d0eb9e2b0b5abaff0b0a2ce 100644
+--- a/dist/alphaTab.core.mjs
++++ b/dist/alphaTab.core.mjs
+@@ -33570,7 +33570,7 @@ class AlphaSynthWebWorkerApi {
+ 		});
+ 	}
+ 	get loadedMidiInfo() {
+-		return this.loadedMidiInfo;
++		return this._loadedMidiInfo;
+ 	}
+ 	get currentPosition() {
+ 		return this._currentPosition;
+diff --git a/dist/alphaTab.js b/dist/alphaTab.js
+index 6da399cf7c1bea0beee994643890d4c9e75bde2e..11a6528e4f104cfa0d547ce22d2d897cd7fd8900 100644
+--- a/dist/alphaTab.js
++++ b/dist/alphaTab.js
+@@ -33574,7 +33574,7 @@
+ 			});
+ 		}
+ 		get loadedMidiInfo() {
+-			return this.loadedMidiInfo;
++			return this._loadedMidiInfo;
+ 		}
+ 		get currentPosition() {
+ 			return this._currentPosition;

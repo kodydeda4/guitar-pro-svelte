@@ -1,7 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, dialog, ipcMain } from 'electron'
+import { readFile } from 'fs/promises'
+import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import type { LibrarySnapshot } from '../shared/library'
+import { isInside, scanLibrary } from './library'
+import { loadSettings, saveSettings } from './settings'
 
 function createWindow(): void {
   // Create the browser window.
@@ -58,8 +62,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  registerLibraryHandlers()
 
   createWindow()
 
@@ -81,3 +84,37 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+async function snapshot(root: string | null): Promise<LibrarySnapshot> {
+  return { root, songs: root ? await scanLibrary(root) : [] }
+}
+
+function registerLibraryHandlers(): void {
+  ipcMain.handle('library:get', async () => snapshot((await loadSettings()).libraryRoot))
+
+  ipcMain.handle('library:choose-folder', async (event) => {
+    const { libraryRoot } = await loadSettings()
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const options: Electron.OpenDialogOptions = {
+      title: 'Choose your tabs folder',
+      buttonLabel: 'Use Folder',
+      properties: ['openDirectory'],
+      defaultPath: libraryRoot ?? app.getPath('home')
+    }
+    const result = window
+      ? await dialog.showOpenDialog(window, options)
+      : await dialog.showOpenDialog(options)
+    if (result.canceled || !result.filePaths[0]) return null
+
+    const { libraryRoot: root } = await saveSettings({ libraryRoot: result.filePaths[0] })
+    return snapshot(root)
+  })
+
+  ipcMain.handle('library:read-song', async (_event, path: string) => {
+    const { libraryRoot } = await loadSettings()
+    if (!libraryRoot || !isInside(libraryRoot, resolve(path))) {
+      throw new Error('Song is outside the library folder')
+    }
+    return new Uint8Array(await readFile(path))
+  })
+}
