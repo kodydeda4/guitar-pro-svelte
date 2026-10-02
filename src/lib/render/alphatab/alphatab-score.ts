@@ -5,6 +5,7 @@ import {
   PlayerMode,
   Settings,
   synth,
+  type IScrollHandler,
   type model
 } from '@coderline/alphatab'
 import bravuraWoff from '@coderline/alphatab/font/Bravura.woff?url'
@@ -24,8 +25,6 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     currentBar: 1
   }
   readonly #listeners = new Set<(state: PlaybackState) => void>()
-  /** Set by `load()` so the new score starts at the top once it has been drawn. */
-  #scrollToTopOnRender = false
 
   /** `scrollElement` is the scroll container the cursor keeps in view during playback. */
   constructor(element: HTMLElement, scrollElement: HTMLElement) {
@@ -45,15 +44,7 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     settings.player.scrollOffsetY = -40
     this.#api = new AlphaTabApi(element, settings)
 
-    // alphaTab animates a scroll to the cursor after every render; a freshly opened song should
-    // start at the top of the page (title and all) instead. Scrolling through alphaTab with no
-    // duration also cancels its running animation.
-    this.#api.postRenderFinished.on(() => {
-      if (!this.#scrollToTopOnRender) return
-      this.#scrollToTopOnRender = false
-      const ui = this.#api.uiFacade
-      ui.scrollToY(ui.getScrollContainer(), 0, 0)
-    })
+    this.#api.customScrollHandler = new TopAwareScrollHandler(this.#api)
 
     this.#api.playerReady.on(() => this.#update({ ready: true }))
     // After switching songs the synth may already be warm; ready again once the new midi is in.
@@ -92,7 +83,6 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
         offError()
       }
       started = true
-      this.#scrollToTopOnRender = true
       if (!this.#api.load(data, [0])) {
         cleanup()
         reject(new Error('Unsupported file format'))
@@ -166,6 +156,52 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   #update(patch: Partial<PlaybackState>): void {
     this.#state = { ...this.#state, ...patch }
     for (const listener of this.#listeners) listener(this.#state)
+  }
+}
+
+type BeatBounds = Parameters<IScrollHandler['forceScrollTo']>[0]
+
+/**
+ * Like alphaTab's default vertical scrolling (scroll to a line of music whenever the cursor
+ * moves to it), except the first line scrolls to the very top so the song's title and the
+ * page's top edge stay visible. alphaTab scrolls to the cursor after every render, pause and
+ * seek, so this is what keeps a freshly opened song at the top.
+ */
+class TopAwareScrollHandler implements IScrollHandler {
+  readonly #api: AlphaTabApi
+  #lastY = -1
+
+  constructor(api: AlphaTabApi) {
+    this.#api = api
+  }
+
+  forceScrollTo(beat: BeatBounds): void {
+    this.#scrollTo(beat, true)
+    this.#lastY = -1
+  }
+
+  onBeatCursorUpdating(beat: BeatBounds): void {
+    this.#scrollTo(beat, false)
+  }
+
+  [Symbol.dispose](): void {}
+
+  #scrollTo(beat: BeatBounds, force: boolean): void {
+    const masterBar = beat.barBounds.masterBarBounds
+    const y = masterBar.realBounds.y
+    if (y === this.#lastY && !force) return
+    this.#lastY = y
+
+    const ui = this.#api.uiFacade
+    const scroll = ui.getScrollContainer()
+    const firstSystem = this.#api.boundsLookup?.staffSystems[0]
+    const top =
+      masterBar.staffSystemBounds === firstSystem
+        ? 0
+        : ui.getOffset(scroll, this.#api.container).y +
+          y +
+          this.#api.settings.player.scrollOffsetY
+    ui.scrollToY(scroll, top, this.#api.settings.player.scrollSpeed)
   }
 }
 
