@@ -1,9 +1,13 @@
 <script lang="ts">
+  import ExternalLinkIcon from '@lucide/svelte/icons/external-link'
+  import HeadphonesIcon from '@lucide/svelte/icons/headphones'
   import Music4Icon from '@lucide/svelte/icons/music-4'
 
   import Transport from '#lib/components/transport.svelte'
   import * as Avatar from '#lib/components/ui/avatar'
   import { Badge } from '#lib/components/ui/badge'
+  import { Button } from '#lib/components/ui/button'
+  import * as DropdownMenu from '#lib/components/ui/dropdown-menu'
   import * as Select from '#lib/components/ui/select'
   import { Spinner } from '#lib/components/ui/spinner'
   import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
@@ -19,6 +23,22 @@
       ? `${session.visibleTracks.length} tracks`
       : score?.tracks[session.visibleTracks[0]]?.name || `Track ${session.visibleTracks[0] + 1}`
   )
+
+  // Search each service for the song; links open in the default browser (see setWindowOpenHandler).
+  const query = $derived(
+    encodeURIComponent(`${score?.artist || song.artist} ${score?.title || song.title}`)
+  )
+  const services = $derived([
+    {
+      name: 'YouTube',
+      color: '#ff0000',
+      url: `https://www.youtube.com/results?search_query=${query}`
+    },
+    { name: 'YouTube Music', color: '#ff0033', url: `https://music.youtube.com/search?q=${query}` },
+    { name: 'Spotify', color: '#1ed760', url: `https://open.spotify.com/search/${query}` },
+    { name: 'Tidal', color: 'currentColor', url: `https://tidal.com/search?q=${query}` },
+    { name: 'Apple Music', color: '#fa2d48', url: `https://music.apple.com/search?term=${query}` }
+  ])
 </script>
 
 <!-- Toolbar above the score: the open song, playback controls, and track picker. -->
@@ -43,6 +63,31 @@
           {score?.artist || song.artist}{song.album ? ` · ${song.album}` : ''}
         </div>
       </div>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              variant="ghost"
+              size="icon-sm"
+              class="shrink-0 text-muted-foreground"
+              aria-label="Listen to this song"
+            >
+              <HeadphonesIcon />
+            </Button>
+          {/snippet}
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="start" class="w-48">
+          <DropdownMenu.Label>Listen on</DropdownMenu.Label>
+          {#each services as service (service.name)}
+            <DropdownMenu.Item onclick={() => window.open(service.url, '_blank')}>
+              <span class="size-2 rounded-full" style:background={service.color}></span>
+              {service.name}
+              <ExternalLinkIcon class="ml-auto text-muted-foreground" />
+            </DropdownMenu.Item>
+          {/each}
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
     </div>
   </div>
 
