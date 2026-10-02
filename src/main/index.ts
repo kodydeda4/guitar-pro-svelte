@@ -25,7 +25,13 @@ function createWindow(): void {
     ...(process.platform !== 'darwin'
       ? { titleBarOverlay: { color: '#00000000', symbolColor: '#a1a1aa', height: 44 } }
       : {}),
-    backgroundColor: '#0a0a0a',
+    // Glass frame: the OS blurs the desktop behind the window and the renderer paints the
+    // frame with a translucent tint (see .glass in app.css). Linux has no such material.
+    ...(process.platform === 'darwin'
+      ? { vibrancy: 'under-window', visualEffectState: 'active', backgroundColor: '#00000000' }
+      : process.platform === 'win32'
+        ? { backgroundMaterial: 'acrylic', backgroundColor: '#00000000' }
+        : { backgroundColor: '#0a0a0a' }),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

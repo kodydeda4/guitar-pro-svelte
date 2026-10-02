@@ -19,75 +19,87 @@
 }
 
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	/* Discord's palette (light theme). */
+	--background: #ffffff;
+	--foreground: #313338;
+	--card: #ffffff;
+	--card-foreground: #313338;
+	--popover: #ffffff;
+	--popover-foreground: #313338;
+	/* Blurple */
+	--primary: #5865f2;
+	--primary-foreground: #ffffff;
+	--secondary: #ebedef;
+	--secondary-foreground: #313338;
+	--muted: #f2f3f5;
+	--muted-foreground: #5c5e66;
+	--accent: #e3e5e8;
+	--accent-foreground: #060607;
+	--destructive: #da373c;
+	--border: #e1e2e4;
+	--input: #d4d7dc;
+	--ring: #5865f2;
+	--chart-1: #5865f2;
+	--chart-2: #23a55a;
+	--chart-3: #f0b232;
+	--chart-4: #eb459e;
+	--chart-5: #da373c;
 	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	/* Window background behind the rail and the content card (Slack-style frame). */
-	--frame: oklch(0.93 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+	--sidebar: #f2f3f5;
+	/* Window background behind the rail and the content card. */
+	--frame: #e3e5e8;
+	--sidebar-foreground: #313338;
+	--sidebar-primary: #5865f2;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #e0e1e5;
+	--sidebar-accent-foreground: #060607;
+	--sidebar-border: #e1e2e4;
+	--sidebar-ring: #5865f2;
 }
 
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.922 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
-	--sidebar: oklch(0.205 0 0);
-	--frame: oklch(0.1 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
+	/* Discord's palette (dark theme). */
+	--background: #1a1a1e;
+	--foreground: #dbdee1;
+	--card: #242429;
+	--card-foreground: #dbdee1;
+	--popover: #28282d;
+	--popover-foreground: #dbdee1;
+	--primary: #5865f2;
+	--primary-foreground: #ffffff;
+	--secondary: #2b2b30;
+	--secondary-foreground: #f2f3f5;
+	--muted: #26262b;
+	--muted-foreground: #949ba4;
+	--accent: #2c2c31;
+	--accent-foreground: #f2f3f5;
+	--destructive: #f23f43;
+	--border: oklch(1 0 0 / 8%);
+	--input: oklch(1 0 0 / 12%);
+	--ring: #5865f2;
+	--chart-1: #5865f2;
+	--chart-2: #23a55a;
+	--chart-3: #f0b232;
+	--chart-4: #eb459e;
+	--chart-5: #f23f43;
+	--sidebar: #121214;
+	--frame: #121214;
+	--sidebar-foreground: #dbdee1;
+	--sidebar-primary: #5865f2;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #2c2c31;
+	--sidebar-accent-foreground: #f2f3f5;
+	--sidebar-border: oklch(1 0 0 / 8%);
+	--sidebar-ring: #5865f2;
+}
+
+/* Glass frame on platforms with a native blur material behind the window (set in
+   src/main/index.ts). The page itself must be transparent so the blur shows through. */
+:root:is([data-platform="darwin"], [data-platform="win32"]) {
+	--frame: rgb(227 229 232 / 0.2);
+}
+.dark:is([data-platform="darwin"], [data-platform="win32"]) {
+	--frame: rgb(18 18 20 / 0.2);
 }
 
 @theme inline {
@@ -140,6 +152,9 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+	:is([data-platform="darwin"], [data-platform="win32"]) body {
+		background: transparent;
+	}
 	html {
 		@apply font-sans;
 	}
@@ -151,12 +166,12 @@
 }
 .at-cursor-beat {
 	width: 3px;
-	background: rgb(37 99 235 / 0.8);
+	background: rgb(88 101 242 / 0.85);
 }
 .at-selection div {
-	background: rgb(37 99 235 / 0.1);
+	background: rgb(88 101 242 / 0.12);
 }
 .at-highlight * {
-	fill: rgb(37 99 235);
-	stroke: rgb(37 99 235);
+	fill: rgb(88 101 242);
+	stroke: rgb(88 101 242);
 }
