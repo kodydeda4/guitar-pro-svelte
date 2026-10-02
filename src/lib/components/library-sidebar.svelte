@@ -2,12 +2,12 @@
   import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
   import EllipsisIcon from '@lucide/svelte/icons/ellipsis'
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
-  import GuitarIcon from '@lucide/svelte/icons/guitar'
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
   import DiscIcon from '@lucide/svelte/icons/disc-3'
   import UserIcon from '@lucide/svelte/icons/user'
 
   import * as Avatar from '#lib/components/ui/avatar'
+  import { Button } from '#lib/components/ui/button'
   import * as Collapsible from '#lib/components/ui/collapsible'
   import * as DropdownMenu from '#lib/components/ui/dropdown-menu'
   import * as Sidebar from '#lib/components/ui/sidebar'
@@ -24,45 +24,48 @@
 </script>
 
 <Sidebar.Root collapsible="none" class="border-r">
-  <Sidebar.Header>
-    <Sidebar.Menu>
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton size="lg" class="pointer-events-none">
-          <div
-            class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-          >
-            <GuitarIcon class="size-4" />
-          </div>
-          <div class="grid flex-1 text-left leading-tight">
-            <span class="truncate font-semibold">Library</span>
-            <span class="truncate text-xs text-muted-foreground">
-              {library.songs.length} songs{folderName ? ` · ${folderName}` : ''}
-            </span>
-          </div>
-        </Sidebar.MenuButton>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            {#snippet child({ props })}
-              <Sidebar.MenuAction {...props} class="top-3.5" aria-label="Library options">
-                <EllipsisIcon />
-              </Sidebar.MenuAction>
-            {/snippet}
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content side="bottom" align="end" class="w-48">
-            {#if library.root}
-              <DropdownMenu.Item disabled={library.loading} onclick={() => library.load()}>
-                <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
-                Rescan folder
-              </DropdownMenu.Item>
-            {/if}
-            <DropdownMenu.Item onclick={() => library.chooseFolder()}>
-              <FolderOpenIcon />
-              {library.root ? 'Change folder…' : 'Choose tabs folder…'}
+  <Sidebar.Header class="px-4 pt-4 pb-3">
+    <div class="flex items-start justify-between gap-2">
+      <div class="min-w-0">
+        <h2 class="text-2xl leading-tight font-bold tracking-tight">Library</h2>
+        <p class="text-[13px] text-muted-foreground tabular-nums">
+          {library.songs.length.toLocaleString()} songs
+        </p>
+      </div>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          {#snippet child({ props })}
+            <Button {...props} variant="ghost" size="icon" aria-label="Library options">
+              <EllipsisIcon />
+            </Button>
+          {/snippet}
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="end" class="w-56">
+          {#if folderName}
+            <DropdownMenu.Label class="font-normal">
+              <div class="truncate text-sm font-medium">{folderName}</div>
+              <div class="truncate text-xs text-muted-foreground" title={library.root}>
+                {library.artists.length} artists · {library.songs.length} songs
+              </div>
+            </DropdownMenu.Label>
+            <DropdownMenu.Separator />
+          {/if}
+          {#if library.root}
+            <DropdownMenu.Item disabled={library.loading} onclick={() => library.load()}>
+              <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
+              Rescan folder
             </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      </Sidebar.MenuItem>
-    </Sidebar.Menu>
+          {/if}
+          <DropdownMenu.Item onclick={() => library.chooseFolder()}>
+            <FolderOpenIcon />
+            {library.root ? 'Change folder…' : 'Choose tabs folder…'}
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    </div>
+    {#if library.root}
+      <Sidebar.Input placeholder="Search" bind:value={library.query} class="mt-2" />
+    {/if}
   </Sidebar.Header>
 
   <Sidebar.Content>
