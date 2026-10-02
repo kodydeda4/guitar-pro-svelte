@@ -1,4 +1,4 @@
-import type { ScoreInfo, ScorePlayer } from '#lib/render/types'
+import type { Notation, ScoreInfo, ScorePlayer } from '#lib/render/types'
 
 export interface TrackMix {
   muted: boolean
@@ -15,6 +15,8 @@ class Session {
   visibleTracks = $state<number[]>([0])
   /** Mixer settings per track index. */
   mix = $state<TrackMix[]>([])
+  /** How each track is drawn, by track index. */
+  notation = $state<Notation[]>([])
   loading = $state(false)
 
   /**
@@ -29,6 +31,7 @@ class Session {
     this.score = score
     this.visibleTracks = [0]
     this.mix = score.tracks.map(() => ({ muted: false, solo: false, volume: 1 }))
+    this.notation = score.tracks.map((t) => ({ ...t.notation }))
     this.loading = false
   }
 
@@ -37,6 +40,7 @@ class Session {
     this.score = null
     this.visibleTracks = [0]
     this.mix = []
+    this.notation = []
     this.loading = false
   }
 
@@ -51,6 +55,20 @@ class Session {
     this.visibleTracks = visible
       ? this.visibleTracks.filter((i) => i !== index)
       : [...this.visibleTracks, index].sort((a, b) => a - b)
+  }
+
+  /** The track the inspector describes: the first one drawn in the score. */
+  get selectedTrack(): number {
+    return this.visibleTracks[0]
+  }
+
+  /** Turns one kind of staff on or off for a track; the last one shown can't be turned off. */
+  setNotation(index: number, kind: keyof Notation, on: boolean): void {
+    const notation = this.notation[index]
+    if (!notation) return
+    const next = { ...notation, [kind]: on }
+    if (!Object.values(next).some(Boolean)) return
+    this.notation[index] = next
   }
 
   setMute(index: number, muted: boolean): void {

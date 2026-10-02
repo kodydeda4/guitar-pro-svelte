@@ -94,6 +94,7 @@
       <ScoreView
         data={songData}
         tracks={session.visibleTracks}
+        notation={session.notation}
         {scrollElement}
         bind:player={session.player}
         onloaded={(info) => session.loaded(info)}

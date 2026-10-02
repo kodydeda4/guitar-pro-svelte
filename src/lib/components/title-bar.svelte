@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state'
   import PanelLeftIcon from '@lucide/svelte/icons/panel-left'
+  import PanelRightIcon from '@lucide/svelte/icons/panel-right'
 
   import { Button } from '#lib/components/ui/button'
   import { ui } from '#lib/ui.svelte'
@@ -19,5 +20,15 @@
     onclick={() => (ui.libraryOpen = !ui.libraryOpen)}
   >
     <PanelLeftIcon />
+  </Button>
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    class="ml-auto"
+    aria-label="Toggle inspector"
+    disabled={!onLibrary}
+    onclick={() => (ui.inspectorOpen = !ui.inspectorOpen)}
+  >
+    <PanelRightIcon />
   </Button>
 </header>

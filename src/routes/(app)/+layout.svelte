@@ -3,10 +3,12 @@
   import { page } from '$app/state'
 
   import AppRail from '#lib/components/app-rail.svelte'
+  import Inspector from '#lib/components/inspector.svelte'
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
   import TitleBar from '#lib/components/title-bar.svelte'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { library } from '#lib/library/library.svelte'
+  import { session } from '#lib/session.svelte'
   import { ui } from '#lib/ui.svelte'
 
   let { children } = $props()
@@ -14,6 +16,9 @@
   library.load()
 
   const showLibrary = $derived(ui.libraryOpen && page.route.id === '/(app)')
+  const showInspector = $derived(
+    ui.inspectorOpen && page.route.id === '/(app)' && !!library.selected && !!session.score
+  )
 
   // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
   //   ⌘,   open Settings
@@ -52,6 +57,9 @@
         <div class="flex min-w-0 flex-1 flex-col">
           {@render children()}
         </div>
+        {#if showInspector && session.score}
+          <Inspector score={session.score} />
+        {/if}
       </Sidebar.Provider>
     </div>
   </div>

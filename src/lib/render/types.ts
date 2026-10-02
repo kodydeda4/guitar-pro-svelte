@@ -3,8 +3,14 @@
 
 export interface ScoreInfo {
   title: string
+  subtitle: string
   artist: string
   album: string
+  words: string
+  music: string
+  /** Who transcribed the tab. */
+  tab: string
+  copyright: string
   tempo: number
   barCount: number
   tracks: TrackInfo[]
@@ -15,11 +21,33 @@ export interface ScoreInfo {
 export interface TrackInfo {
   index: number
   name: string
+  /** Abbreviated name, e.g. "s.guit.". */
+  shortName: string
   /** CSS color from the file (Guitar Pro assigns one per track). */
   color: string
   isPercussion: boolean
+  /** Has strings and frets, so it can be shown as tablature. */
+  isStringed: boolean
+  /** General MIDI program number (0–127). */
+  program: number
+  /** Open-string note names, lowest string first ("E", "A", …); empty if not stringed. */
+  tuning: string[]
+  /** Name of a known tuning ("Drop D"), or empty. */
+  tuningName: string
+  /** Fret the capo is on; 0 for none. */
+  capo: number
+  /** How the track is drawn, as saved in the file. */
+  notation: Notation
   /** Per bar: whether this track plays anything there. */
   activeBars: boolean[]
+}
+
+/** Which kinds of staff a track is drawn with; at least one is always on. */
+export interface Notation {
+  standard: boolean
+  tablature: boolean
+  slash: boolean
+  numbered: boolean
 }
 
 export interface ScoreRenderer {
@@ -27,6 +55,8 @@ export interface ScoreRenderer {
   load(data: Uint8Array): Promise<ScoreInfo>
   /** Re-renders showing only the given tracks (in score order). */
   showTracks(indices: number[]): void
+  /** Sets how each track (by index) is drawn; re-renders only if something changed. */
+  setNotation(notation: Notation[]): void
   destroy(): void
 }
 

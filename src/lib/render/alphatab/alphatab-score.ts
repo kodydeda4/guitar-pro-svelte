@@ -5,13 +5,14 @@ import {
   PlayerMode,
   Settings,
   synth,
+  Tuning,
   type IScrollHandler,
   type model
 } from '@coderline/alphatab'
 import bravuraWoff from '@coderline/alphatab/font/Bravura.woff?url'
 import bravuraWoff2 from '@coderline/alphatab/font/Bravura.woff2?url'
 import soundFont from '@coderline/alphatab/soundfont/sonivox.sf2?url'
-import type { PlaybackState, ScoreInfo, ScorePlayer, ScoreRenderer } from '../types'
+import type { Notation, PlaybackState, ScoreInfo, ScorePlayer, ScoreRenderer } from '../types'
 
 /** Renders and plays scores with alphaTab inside `element`. */
 export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
@@ -93,6 +94,31 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   showTracks(indices: number[]): void {
     const tracks = this.#tracks(indices)
     if (tracks.length > 0) this.#api.renderTracks(tracks)
+  }
+
+  setNotation(notation: Notation[]): void {
+    let changed = false
+    for (const track of this.#score?.tracks ?? []) {
+      const n = notation[track.index]
+      if (!n) continue
+      for (const staff of track.staves) {
+        // Tablature needs strings; leave it off for drums and other unstringed staves.
+        const tablature = n.tablature && staff.isStringed
+        if (
+          staff.showStandardNotation !== n.standard ||
+          staff.showTablature !== tablature ||
+          staff.showSlash !== n.slash ||
+          staff.showNumbered !== n.numbered
+        ) {
+          staff.showStandardNotation = n.standard
+          staff.showTablature = tablature
+          staff.showSlash = n.slash
+          staff.showNumbered = n.numbered
+          changed = true
+        }
+      }
+    }
+    if (changed) this.#api.render()
   }
 
   playPause(): void {
@@ -208,19 +234,42 @@ class TopAwareScrollHandler implements IScrollHandler {
 function toScoreInfo(score: model.Score): ScoreInfo {
   return {
     title: score.title,
+    subtitle: score.subTitle,
     artist: score.artist,
     album: score.album,
+    words: score.words,
+    music: score.music,
+    tab: score.tab,
+    copyright: score.copyright,
     tempo: score.tempo,
     barCount: score.masterBars.length,
-    tracks: score.tracks.map((track) => ({
-      index: track.index,
-      name: track.name,
-      color: track.color.rgba,
-      isPercussion: track.staves.some((staff) => staff.isPercussion),
-      activeBars: score.masterBars.map((_, bar) =>
-        track.staves.some((staff) => staff.bars[bar] && !staff.bars[bar].isRestOnly)
-      )
-    })),
+    tracks: score.tracks.map((track) => {
+      const staff = track.staves[0]
+      return {
+        index: track.index,
+        name: track.name,
+        shortName: track.shortName,
+        color: track.color.rgba,
+        isPercussion: track.staves.some((s) => s.isPercussion),
+        isStringed: staff.isStringed,
+        program: track.playbackInfo.program,
+        // alphaTab lists strings highest first; guitarists read tunings lowest first.
+        tuning: staff.isStringed
+          ? [...staff.tuning].reverse().map((note) => Tuning.getTextForTuning(note, false))
+          : [],
+        tuningName: staff.isStringed ? staff.tuningName : '',
+        capo: staff.capo,
+        notation: {
+          standard: staff.showStandardNotation,
+          tablature: staff.isStringed && staff.showTablature,
+          slash: staff.showSlash,
+          numbered: staff.showNumbered
+        },
+        activeBars: score.masterBars.map((_, bar) =>
+          track.staves.some((s) => s.bars[bar] && !s.bars[bar].isRestOnly)
+        )
+      }
+    }),
     sections: score.masterBars.flatMap((masterBar, bar) =>
       masterBar.section ? [{ bar, name: masterBar.section.text }] : []
     )

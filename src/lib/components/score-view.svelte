@@ -1,10 +1,11 @@
 <script lang="ts">
   import { AlphaTabScore } from '#lib/render/alphatab/alphatab-score'
-  import type { ScoreInfo, ScorePlayer } from '#lib/render/types'
+  import type { Notation, ScoreInfo, ScorePlayer } from '#lib/render/types'
 
   let {
     data,
     tracks = [0],
+    notation = [],
     scrollElement,
     player = $bindable(null),
     onloaded,
@@ -14,6 +15,8 @@
     data: Uint8Array | null
     /** Indices of the tracks to draw. */
     tracks?: number[]
+    /** How each track (by index) is drawn. */
+    notation?: Notation[]
     /** The scroll container that playback keeps the cursor visible in. */
     scrollElement: HTMLElement
     /** Exposes playback controls for the loaded score. */
@@ -54,6 +57,12 @@
     if (!score || !loadedData || key === shown) return
     shown = key
     score.showTracks([...tracks])
+  })
+
+  $effect(() => {
+    const current = $state.snapshot(notation)
+    if (!score || !loadedData) return
+    score.setNotation(current)
   })
 </script>
 
