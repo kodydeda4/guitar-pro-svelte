@@ -1,0 +1,1 @@
+{"version":3,"file":"types.js","names":[],"sources":["../../../../node_modules/layerchart/dist/utils/types.js"],"sourcesContent":["/**\n * Useful to workaround Svelte 3/4 markup type issues\n * TODO: Remove usage after migrating to Svelte 5\n */\nexport function asAny(x) {\n    return x;\n}\n"],"ignoreList":[0],"mappings":";;;;;AAIA,SAAgB,MAAM,GAAG;CACrB,OAAO;AACX"}

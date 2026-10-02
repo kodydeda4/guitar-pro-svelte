@@ -1,0 +1,14 @@
+{
+  "extends": "$app/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    // Mirrors package.json "imports" so TypeScript can resolve folder imports like #lib/components/ui/button.
+    "paths": {
+      "#lib": ["./src/lib/index.ts"],
+      "#lib/*": ["./src/lib/*"]
+    }
+  },
+  "include": ["src", "vite.config.mts"],
+  // The Electron main/preload code is checked separately by tsconfig.node.json.
+  "exclude": ["src/main", "src/preload/index.ts"]
+}

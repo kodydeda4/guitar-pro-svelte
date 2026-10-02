@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Build output
+# out: electron-vite (main/preload) + SvelteKit static build (renderer)
+out
+# dist: electron-builder installers
+dist
+# .svelte-kit: SvelteKit generated types and build cache
+.svelte-kit
+*.tsbuildinfo
+vite.config.*.timestamp-*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs and caches
+*.log*
+.eslintcache
+
+# OS / editors (.vscode is tracked on purpose for shared settings)
+.DS_Store
+.idea
