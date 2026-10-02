@@ -44,6 +44,8 @@
 	--chart-5: oklch(0.269 0 0);
 	--radius: 0.625rem;
 	--sidebar: oklch(0.985 0 0);
+	/* Window background behind the rail and the content card (Slack-style frame). */
+	--frame: oklch(0.93 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: oklch(0.205 0 0);
 	--sidebar-primary-foreground: oklch(0.985 0 0);
@@ -78,6 +80,7 @@
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
 	--sidebar: oklch(0.205 0 0);
+	--frame: oklch(0.1 0 0);
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: oklch(0.488 0.243 264.376);
 	--sidebar-primary-foreground: oklch(0.985 0 0);
@@ -97,6 +100,7 @@
 	--color-sidebar-primary: var(--sidebar-primary);
 	--color-sidebar-foreground: var(--sidebar-foreground);
 	--color-sidebar: var(--sidebar);
+	--color-frame: var(--frame);
 	--color-chart-5: var(--chart-5);
 	--color-chart-4: var(--chart-4);
 	--color-chart-3: var(--chart-3);

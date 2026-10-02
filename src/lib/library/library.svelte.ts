@@ -82,3 +82,6 @@ function groupByArtist(songs: LibrarySong[]): ArtistGroup[] {
   }
   return groups
 }
+
+/** The app-wide library, shared by the sidebar and every page. */
+export const library = new Library()
