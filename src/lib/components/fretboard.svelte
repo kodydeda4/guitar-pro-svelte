@@ -35,19 +35,26 @@
     markers?: FretMarker[]
   } = $props()
 
-  const INLAYS = [3, 5, 7, 9, 15, 17, 19, 21]
-  const DOUBLE_INLAYS = [12, 24]
+  const INLAYS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
+  /** The board runs a little past the last fret, like a real neck. */
+  const LAST_FRET_AT = 98.5
 
-  /** Frets are evenly spaced, like a chart (not a real neck): fret `n`'s wire is at n/frets. */
-  const wireX = (n: number): string => `${(n / frets) * 100}%`
+  /** Distance of fret `n`'s wire from the nut, as a % of the board: frets get closer toward the body. */
+  const fretX = (n: number): number =>
+    ((1 - 2 ** (-n / 12)) / (1 - 2 ** (-frets / 12))) * LAST_FRET_AT
   /** Middle of the space before fret `n`, where it's pressed; open strings sit left of the nut. */
-  const noteX = (n: number): string => (n === 0 ? '-1.75rem' : `${((n - 0.5) / frets) * 100}%`)
+  const noteX = (n: number): string => (n === 0 ? '-1.75rem' : `${(fretX(n - 1) + fretX(n)) / 2}%`)
   /** Strings are drawn like tab: the highest string on top. */
   const stringY = (string: number): string =>
     `${((tuning.length - 1 - string + 0.5) / tuning.length) * 100}%`
+  /** Low strings are thicker. */
+  const gauge = (string: number): number =>
+    3 - (string / Math.max(1, tuning.length - 1)) * (tuning.length <= 4 ? 1 : 2)
+  /** Guitars' two highest strings are plain steel; everything else (and all bass strings) is wound. */
+  const wound = (string: number): boolean => tuning.length <= 4 || string < tuning.length - 2
 
   const fretNumbers = $derived(Array.from({ length: frets }, (_, i) => i + 1))
-  const inlaid = (n: number): boolean => INLAYS.includes(n) || DOUBLE_INLAYS.includes(n)
+  const inlaid = (n: number): boolean => INLAYS.includes(n)
   // Active notes last, so they're drawn on top.
   const ordered = $derived(
     markers
@@ -56,8 +63,9 @@
   )
 </script>
 
-<!-- A flat fretboard chart for the given tuning: fret numbers on top, open strings left of the
-     nut, inlay dots underneath, and markers (scale tones, played notes) on the strings. -->
+<!-- A metal-style guitar neck for the given tuning: jet-black ebony, pearl sharkfin inlays, jumbo
+     steel frets and real fret spacing. Fret numbers on top, open strings left of the nut, and
+     markers (scale tones, played notes) on the strings. -->
 <div class="fretboard flex h-full min-h-0 flex-col bg-sidebar py-2 pr-5 pl-3 select-none">
   <!-- Fret numbers -->
   <div class="relative ml-14 h-5 shrink-0 text-[11px] font-medium tabular-nums">
@@ -74,14 +82,31 @@
     {/each}
   </div>
 
-  <div class="relative ml-14 min-h-0 flex-1">
-    <div class="board absolute inset-0 bg-background" style:--strings={tuning.length}>
-      <span class="nut absolute inset-y-0 left-0"></span>
+  <div class="relative ml-14 mb-2 min-h-0 flex-1">
+    <div class="board absolute inset-0 rounded-r-md" style:--strings={tuning.length}>
+      <div class="grain absolute inset-0 rounded-r-md"></div>
+
       {#each fretNumbers as n (n)}
-        <span class="wire absolute inset-y-0" style:left={wireX(n)}></span>
+        {#if inlaid(n)}
+          <span
+            class="sharkfin absolute"
+            style:left="{fretX(n - 1)}%"
+            style:width="{fretX(n) - fretX(n - 1)}%"
+          ></span>
+        {/if}
       {/each}
+
+      <span class="nut absolute -inset-y-px left-0"></span>
+      {#each fretNumbers as n (n)}
+        <span class="fret absolute inset-y-0" style:left="{fretX(n)}%"></span>
+      {/each}
+
       {#each tuning as _, string (string)}
-        <span class="string absolute right-0 -left-3.5" style:top={stringY(string)}></span>
+        <span
+          class={cn('string absolute right-0 -left-3.5', wound(string) && 'wound')}
+          style:top={stringY(string)}
+          style:height="{gauge(string)}px"
+        ></span>
       {/each}
 
       {#each ordered as marker (`${marker.string}:${marker.fret}:${marker.active}`)}
@@ -107,48 +132,100 @@
       {/each}
     </div>
   </div>
-
-  <!-- Inlay dots, under the board like the side dots on a real neck. -->
-  <div class="relative ml-14 h-4 shrink-0">
-    {#each fretNumbers as n (n)}
-      {#if INLAYS.includes(n)}
-        <span class="inlay absolute top-1.5" style:left={noteX(n)}></span>
-      {:else if DOUBLE_INLAYS.includes(n)}
-        <span class="inlay absolute top-1.5 -ml-1" style:left={noteX(n)}></span>
-        <span class="inlay absolute top-1.5 ml-1" style:left={noteX(n)}></span>
-      {/if}
-    {/each}
-  </div>
 </div>
 
 <style>
-  .board {
-    container-type: size;
+  .fretboard {
+    --ebony: #0b0b0c;
+    --ebony-edge: #050505;
   }
 
+  .board {
+    container-type: size;
+    background: linear-gradient(
+      180deg,
+      var(--ebony-edge),
+      var(--ebony) 14%,
+      #121213 50%,
+      var(--ebony) 86%,
+      var(--ebony-edge)
+    );
+    /* A faint sheen along both edges, and a shadow so the neck sits on the panel. */
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      inset 0 -1px 0 rgb(255 255 255 / 0.08),
+      0 6px 18px rgb(0 0 0 / 0.45);
+  }
+
+  /* Tight ebony grain along the neck. */
+  .grain {
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0 3px,
+        rgb(255 255 255 / 0.018) 3px 4px,
+        transparent 4px 9px
+      ),
+      repeating-linear-gradient(
+        177deg,
+        transparent 0 13px,
+        rgb(255 255 255 / 0.02) 13px 14px,
+        transparent 14px 27px
+      );
+    pointer-events: none;
+  }
+
+  /* Pearl sharkfins: a wedge rising toward the body, filling most of the fret space. */
+  .sharkfin {
+    top: 9%;
+    bottom: 9%;
+    clip-path: polygon(12% 100%, 88% 0, 88% 100%);
+    background: linear-gradient(125deg, #f5f2ea, #cdd7dc 30%, #efe6f2 55%, #b7c3c8 80%, #e8efe9);
+    opacity: 0.5;
+  }
+
+  /* Black graphite nut. */
   .nut {
+    width: 0.5rem;
+    translate: -50% 0;
+    z-index: 1;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #1a1a1c, #3a3a3e 45%, #151517);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      2px 0 4px rgb(0 0 0 / 0.6);
+  }
+
+  /* Jumbo stainless frets: a wide crown that catches the light. */
+  .fret {
     width: 4px;
     translate: -50% 0;
-    border-radius: 2px;
-    background: color-mix(in oklab, var(--foreground) 40%, transparent);
+    background: linear-gradient(90deg, #5d6066, #f4f6f8 45%, #b3b7bd 70%, #55585e);
+    box-shadow: 1px 0 3px rgb(0 0 0 / 0.7);
   }
-  .wire {
-    width: 2px;
-    translate: -50% 0;
-    background: color-mix(in oklab, var(--foreground) 14%, transparent);
-  }
+
   .string {
-    height: 1.5px;
     translate: 0 -50%;
-    background: color-mix(in oklab, var(--foreground) 28%, transparent);
+    z-index: 2;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #f4f5f7, #a9adb3 55%, #5f636a);
+    box-shadow: 0 2px 2px rgb(0 0 0 / 0.7);
+  }
+  /* Nickel-wound strings, the winding showing as fine diagonal ridges. */
+  .string.wound {
+    background:
+      repeating-linear-gradient(110deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 2.5px),
+      linear-gradient(180deg, #e6e8eb, #9a9ea5 55%, #5a5e65);
   }
 
   /* Notes outside the scale: a dimmed label that interrupts the string line. */
   .faint {
     translate: -50% -50%;
+    z-index: 3;
     padding: 0 3px;
-    background: var(--background);
-    color: color-mix(in oklab, var(--foreground) 32%, transparent);
+    border-radius: 3px;
+    background: var(--ebony);
+    color: rgb(255 255 255 / 0.4);
     font-size: 10px;
     font-weight: 500;
     line-height: 1;
@@ -156,6 +233,7 @@
   /* Open strings sit in the gutter left of the nut, off the board. */
   .faint.open {
     background: var(--sidebar);
+    color: color-mix(in oklab, var(--foreground) 32%, transparent);
   }
 
   /* Sized to the string spacing so dots on neighbouring strings never overlap. */
@@ -164,29 +242,30 @@
     width: var(--size);
     height: var(--size);
     translate: -50% -50%;
+    z-index: 3;
     border-radius: 9999px;
-    background: var(--dot);
+    background: radial-gradient(
+      circle at 35% 30%,
+      color-mix(in oklab, var(--dot) 72%, white),
+      var(--dot) 60%
+    );
     color: var(--dot-text);
     font-size: 11px;
     font-weight: 700;
     line-height: 1;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+    box-shadow:
+      0 0 0 1.5px color-mix(in oklab, var(--dot) 55%, black),
+      0 2px 6px rgb(0 0 0 / 0.6),
+      inset 0 1px 0 rgb(255 255 255 / 0.3);
   }
-  /* Being played: bigger, ringed in the foreground color, glowing in its own color. */
+  /* Being played: bigger, ringed in white, glowing in its own color. */
   .dot.active {
-    z-index: 1;
+    z-index: 4;
     scale: 1.18;
     box-shadow:
-      0 0 0 2px var(--background),
-      0 0 0 4px var(--foreground),
-      0 0 14px 4px color-mix(in oklab, var(--dot) 70%, transparent);
-  }
-
-  .inlay {
-    width: 5px;
-    height: 5px;
-    translate: -50% 0;
-    border-radius: 9999px;
-    background: color-mix(in oklab, var(--foreground) 30%, transparent);
+      0 0 0 2px var(--ebony),
+      0 0 0 3.5px white,
+      0 0 16px 5px color-mix(in oklab, var(--dot) 75%, transparent);
   }
 </style>
