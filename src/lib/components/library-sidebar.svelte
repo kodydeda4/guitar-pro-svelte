@@ -4,7 +4,10 @@
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
   import DiscIcon from '@lucide/svelte/icons/disc-3'
+  import SearchIcon from '@lucide/svelte/icons/search'
   import UserIcon from '@lucide/svelte/icons/user'
+  import { tick } from 'svelte'
+  import { fade } from 'svelte/transition'
 
   import * as Avatar from '#lib/components/ui/avatar'
   import { Button } from '#lib/components/ui/button'
@@ -14,61 +17,116 @@
   import { Spinner } from '#lib/components/ui/spinner'
   import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
   import type { Library } from '#lib/library/library.svelte'
+  import { cn } from '#lib/utils'
 
   let { library }: { library: Library } = $props()
 
   // While searching, show every match expanded; otherwise remember what the user opened.
   let open = $state<Record<string, boolean>>({})
   const searching = $derived(library.query.trim() !== '')
+  /** The large title has scrolled out of view, so the sticky bar shows the compact one. */
+  let collapsed = $state(false)
+  let largeTitle = $state<HTMLElement>()
+  /** Search was opened from the collapsed bar's button. */
+  let searchOpen = $state(false)
+  let searchInput = $state<HTMLInputElement | null>(null)
+  // The full search field shows at the top of the list, after tapping the collapsed bar's
+  // search button, and while there's a query (so it's never hidden mid-search).
+  const showSearch = $derived(!collapsed || searchOpen || library.query !== '')
+
+  async function openSearch(): Promise<void> {
+    searchOpen = true
+    await tick()
+    searchInput?.focus()
+  }
+
   const folderName = $derived(library.root?.split('/').filter(Boolean).at(-1) ?? null)
 </script>
 
+{#snippet menu(size: 'icon' | 'icon-sm' = 'icon')}
+  <DropdownMenu.Root>
+    <DropdownMenu.Trigger>
+      {#snippet child({ props })}
+        <Button {...props} variant="ghost" {size} aria-label="Library options">
+          <EllipsisIcon />
+        </Button>
+      {/snippet}
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Content align="end" class="w-56">
+      {#if folderName}
+        <DropdownMenu.Label class="font-normal">
+          <div class="truncate text-sm font-medium">{folderName}</div>
+          <div class="truncate text-xs text-muted-foreground" title={library.root}>
+            {library.artists.length} artists · {library.songs.length} songs
+          </div>
+        </DropdownMenu.Label>
+        <DropdownMenu.Separator />
+      {/if}
+      {#if library.root}
+        <DropdownMenu.Item disabled={library.loading} onclick={() => library.load()}>
+          <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
+          Rescan folder
+        </DropdownMenu.Item>
+      {/if}
+      <DropdownMenu.Item onclick={() => library.chooseFolder()}>
+        <FolderOpenIcon />
+        {library.root ? 'Change folder…' : 'Choose tabs folder…'}
+      </DropdownMenu.Item>
+    </DropdownMenu.Content>
+  </DropdownMenu.Root>
+{/snippet}
+
 <Sidebar.Root collapsible="none" class="border-r">
-  <Sidebar.Header class="px-4 pt-4 pb-3">
-    <div class="flex items-start justify-between gap-2">
+  <Sidebar.Content
+    onscroll={(e) => (collapsed = e.currentTarget.scrollTop >= (largeTitle?.offsetHeight ?? 0))}
+  >
+    <!-- Large title: scrolls away with the list, like a macOS/iOS large navigation title. -->
+    <div bind:this={largeTitle} class="flex items-start justify-between gap-2 px-4 pt-4">
       <div class="min-w-0">
         <h2 class="text-2xl leading-tight font-bold tracking-tight">Library</h2>
         <p class="text-[13px] text-muted-foreground tabular-nums">
           {library.songs.length.toLocaleString()} songs
         </p>
       </div>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          {#snippet child({ props })}
-            <Button {...props} variant="ghost" size="icon" aria-label="Library options">
-              <EllipsisIcon />
-            </Button>
-          {/snippet}
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="end" class="w-56">
-          {#if folderName}
-            <DropdownMenu.Label class="font-normal">
-              <div class="truncate text-sm font-medium">{folderName}</div>
-              <div class="truncate text-xs text-muted-foreground" title={library.root}>
-                {library.artists.length} artists · {library.songs.length} songs
-              </div>
-            </DropdownMenu.Label>
-            <DropdownMenu.Separator />
-          {/if}
-          {#if library.root}
-            <DropdownMenu.Item disabled={library.loading} onclick={() => library.load()}>
-              <RefreshCwIcon class={library.loading ? 'animate-spin' : ''} />
-              Rescan folder
-            </DropdownMenu.Item>
-          {/if}
-          <DropdownMenu.Item onclick={() => library.chooseFolder()}>
-            <FolderOpenIcon />
-            {library.root ? 'Change folder…' : 'Choose tabs folder…'}
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
+      {@render menu()}
     </div>
-    {#if library.root}
-      <Sidebar.Input placeholder="Search" bind:value={library.query} class="mt-2" />
-    {/if}
-  </Sidebar.Header>
 
-  <Sidebar.Content>
+    <!-- Sticky glass bar: the list scrolls underneath it, blurred. Once the large title has
+         scrolled away it shows a centered title, with search collapsed into a button. -->
+    {#if library.root || collapsed}
+      <Sidebar.Header
+        class={cn(
+          'sticky top-0 z-10 h-12 flex-row items-center border-b border-transparent bg-sidebar/70 px-4 py-2 backdrop-blur-xl transition-colors',
+          collapsed && 'border-sidebar-border'
+        )}
+      >
+        {#if library.root && showSearch}
+          <div class="w-full" in:fade={{ duration: 150 }}>
+            <Sidebar.Input
+              bind:ref={searchInput}
+              placeholder="Search"
+              bind:value={library.query}
+              onblur={() => (searchOpen = false)}
+            />
+          </div>
+        {:else}
+          <div
+            class="grid w-full grid-cols-[2rem_1fr_2rem] items-center"
+            in:fade={{ duration: 150 }}
+          >
+            {#if library.root}
+              <Button variant="ghost" size="icon-sm" aria-label="Search" onclick={openSearch}>
+                <SearchIcon />
+              </Button>
+            {:else}
+              <span></span>
+            {/if}
+            <span class="truncate text-center text-sm font-bold">Library</span>
+            {@render menu('icon-sm')}
+          </div>
+        {/if}
+      </Sidebar.Header>
+    {/if}
     {#if library.loading && library.songs.length === 0}
       <div class="flex justify-center p-6"><Spinner /></div>
     {:else if library.root && library.artists.length === 0}
@@ -156,5 +214,4 @@
       </Sidebar.Group>
     {/if}
   </Sidebar.Content>
-
 </Sidebar.Root>
