@@ -6,6 +6,7 @@
   import { Button } from '#lib/components/ui/button'
   import { albumArtworkUrl, artistArtworkUrl } from '#lib/library/artwork'
   import { library } from '#lib/library/library.svelte'
+  import { cn } from '#lib/utils'
   import type { LibrarySong } from '../../shared/library'
 
   /** A few items picked at random (re-picked when the library changes). */
@@ -35,6 +36,60 @@
 
   const songArtwork = (song: LibrarySong): string =>
     song.album ? albumArtworkUrl(song.artist, song.album) : artistArtworkUrl(song.artist)
+
+  /** Greetings for the welcome screen; one is picked per visit and typed out. */
+  function greetings(hour: number): string[] {
+    const timely =
+      hour < 5
+        ? ['Up late, night owl?', 'The 3 a.m. riff hits different']
+        : hour < 12
+          ? ['Good morning, shredder', 'Coffee first, then scales']
+          : hour < 18
+            ? ['Good afternoon, axe slinger', 'Perfect afternoon for a solo']
+            : ['Good evening, guitar hero', 'Golden hour, golden tone']
+    return [
+      ...timely,
+      'Welcome back, guitar master',
+      'Ready to shred?',
+      'Your fingers miss the frets',
+      'Tune up, turn it up',
+      'Strings are stretched. Let’s go.',
+      'What are we learning today?',
+      'Pick it up, pick a song',
+      'Time to make some noise',
+      'One more run-through?',
+      'The amp is warm',
+      'Practice makes perfect fifths',
+      'Fresh calluses incoming',
+      'Riffs await',
+      'Let’s get some calluses',
+      'Hello again, string bender',
+      'Back for more, maestro?'
+    ]
+  }
+
+  const pool = greetings(new Date().getHours())
+  const greeting = pool[Math.floor(Math.random() * pool.length)]
+
+  // Type the greeting out, a character at a time (shown at once if motion is reduced).
+  let typed = $state('')
+  $effect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      typed = greeting
+      return
+    }
+    let i = 0
+    let timer: ReturnType<typeof setTimeout>
+    const tick = (): void => {
+      typed = greeting.slice(0, ++i)
+      // Uneven, human-ish timing, with a beat after punctuation.
+      if (i < greeting.length)
+        timer = setTimeout(tick, /[,.?!]/.test(greeting[i - 1]) ? 260 : 35 + Math.random() * 55)
+    }
+    timer = setTimeout(tick, 350)
+    return () => clearTimeout(timer)
+  })
+  const typing = $derived(typed.length < greeting.length)
 
   function playRandom(): void {
     const [song] = sample(library.songs, 1)
@@ -89,7 +144,16 @@
       {/each}
     </div>
 
-    <h1 class="title text-5xl font-extrabold tracking-tight text-foreground">Pick a song</h1>
+    <!-- The greeting, typed out; the full text is the accessible name from the start. -->
+    <h1
+      class="title min-h-[1.2em] text-center text-5xl font-extrabold tracking-tight text-foreground"
+      aria-label={greeting}
+    >
+      <span aria-hidden="true">{typed}</span><span
+        class={cn('caret', !typing && 'done')}
+        aria-hidden="true"
+      ></span>
+    </h1>
     <p class="mt-3 text-[15px] font-medium text-foreground/90">
       Your library is ready. Choose something from the sidebar, or let fate decide.
     </p>
@@ -171,6 +235,33 @@
       0 0 0 1px rgb(255 255 255 / 0.14),
       0 3px 8px rgb(0 0 0 / 0.45),
       0 22px 44px rgb(0 0 0 / 0.65);
+  }
+
+  /* The typing caret: solid while typing, then blinking for a while before it fades away. */
+  .caret {
+    display: inline-block;
+    width: 0.08em;
+    height: 0.9em;
+    margin-left: 0.06em;
+    translate: 0 0.1em;
+    border-radius: 1px;
+    background: var(--primary);
+    box-shadow: 0 0 12px color-mix(in oklab, var(--primary) 70%, transparent);
+  }
+  .caret.done {
+    animation:
+      blink 1s steps(1) infinite,
+      fade-out 0.6s ease 4s forwards;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      visibility: hidden;
+    }
   }
 
   /* A soft dark halo so the title reads cleanly against the glow. */
