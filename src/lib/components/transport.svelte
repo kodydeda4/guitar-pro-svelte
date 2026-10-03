@@ -30,7 +30,14 @@
   let metronome = $state(false)
   let countIn = $state(false)
 
-  $effect(() => player?.onPlaybackChange((state) => (playback = state)))
+  $effect(() => {
+    // No player (no song open): forget the last one's state so nothing looks playable.
+    if (!player) {
+      playback = null
+      return
+    }
+    return player.onPlaybackChange((state) => (playback = state))
+  })
 
   // Push the current options to the player (and again whenever a new one appears).
   $effect(() => player?.setSpeed(Number(speed)))
@@ -97,8 +104,10 @@
           disabled={!ready}
           onclick={() => player?.playPause()}
         >
-          {#if !ready}
+          {#if player && !ready}
             <Spinner />
+          {:else if !player}
+            <PlayIcon />
           {:else if playback?.playing}
             <PauseIcon />
           {:else}

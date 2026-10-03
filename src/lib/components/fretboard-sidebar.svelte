@@ -1,8 +1,11 @@
 <script lang="ts">
   import CheckIcon from '@lucide/svelte/icons/check'
+  import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
   import PanelBottomIcon from '@lucide/svelte/icons/panel-bottom'
 
   import FretLabelsToggle from '#lib/components/fret-labels-toggle.svelte'
+  import { INLAY_COLORS, INLAY_SHAPES, WOODS } from '#lib/components/fretboard.svelte'
+  import * as Collapsible from '#lib/components/ui/collapsible'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { Switch } from '#lib/components/ui/switch'
   import { noteName } from '#lib/midi'
@@ -15,6 +18,28 @@
 
   const scale = $derived(findScale(ui.scaleId))
   const scaleName = $derived(`${noteName(ui.scaleRoot)} ${scale?.name ?? ''}`)
+  /** Swatch fills for the Appearance pickers, matching the fretboard's woods and inlays. */
+  const WOOD_SWATCH: Record<(typeof WOODS)[number]['id'], string> = {
+    ebony: 'linear-gradient(180deg, #040404, #1a191c 50%, #040404)',
+    rosewood: 'linear-gradient(180deg, #1a0e09, #452c21 50%, #1a0e09)',
+    maple: 'linear-gradient(180deg, #b88f58, #e8c994 50%, #b88f58)'
+  }
+  const INLAY_SWATCH: Record<(typeof INLAY_COLORS)[number]['id'], string> = {
+    pearl: 'linear-gradient(125deg, #f3efe6, #c9d4da 35%, #ece2ef 60%, #b4c1c7 85%, #e6ede8)',
+    abalone: 'linear-gradient(135deg, #2bb59b, #3d6fd1 40%, #7b4fc9 70%, #2aa5a0)',
+    white: 'linear-gradient(180deg, #f6f4ee, #e4e0d6)',
+    black: 'linear-gradient(180deg, #1b1b1d, #050505)'
+  }
+
+  const STRING_COUNTS = [
+    { id: 'auto', label: 'Track' },
+    { id: '6', label: '6' },
+    { id: '7', label: '7' },
+    { id: '8', label: '8' }
+  ] as const
+
+  let appearanceOpen = $state(false)
+
   const fretboardVisible = $derived(ui.tracksOpen && ui.tracksView === 'fretboard')
 
   function showFretboard(): void {
@@ -25,6 +50,46 @@
 
 {#snippet heading(text: string)}
   <h3 class="mb-2 px-1 text-xs font-semibold text-muted-foreground">{text}</h3>
+{/snippet}
+
+<!-- A row of options, each a swatch (when given) and a label; the selected one is ringed. -->
+{#snippet picker(
+  label: string,
+  options: readonly { id: string; label: string }[],
+  selected: string,
+  pick: (id: string) => void,
+  swatch?: (id: string) => string
+)}
+  <div class="flex flex-col gap-1.5">
+    <span class="px-1 text-[11px] font-medium text-muted-foreground">{label}</span>
+    <div
+      class="grid gap-1"
+      style:grid-template-columns="repeat({Math.min(options.length, 4)}, minmax(0, 1fr))"
+    >
+      {#each options as option (option.id)}
+        {@const active = option.id === selected}
+        <button
+          type="button"
+          class={cn(
+            'flex flex-col items-center gap-1 rounded-md px-1 py-1.5 text-[11px] font-medium transition-colors',
+            active
+              ? 'bg-primary/12 text-primary ring-1 ring-primary'
+              : 'bg-foreground/6 text-foreground/80 hover:bg-foreground/12'
+          )}
+          aria-pressed={active}
+          onclick={() => pick(option.id)}
+        >
+          {#if swatch}
+            <span
+              class="h-4 w-full rounded-sm ring-1 ring-foreground/15 ring-inset"
+              style:background={swatch(option.id)}
+            ></span>
+          {/if}
+          {option.label}
+        </button>
+      {/each}
+    </div>
+  </div>
 {/snippet}
 
 {#snippet dot(kind: 'idle' | 'playing')}
@@ -66,6 +131,48 @@
         Show the fretboard panel
       </button>
     {/if}
+
+    <!-- How the fretboard looks: its wood, the inlay shape and the inlay material. -->
+    <Collapsible.Root bind:open={appearanceOpen} class="px-3 pb-4">
+      <Collapsible.Trigger
+        class="flex w-full items-center gap-1 rounded-md px-1 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+      >
+        <ChevronRightIcon
+          class={cn('size-3.5 transition-transform', appearanceOpen && 'rotate-90')}
+        />
+        Appearance
+      </Collapsible.Trigger>
+      <Collapsible.Content class="flex flex-col gap-3 pt-2">
+        {@render picker(
+          'Fretboard',
+          WOODS,
+          ui.fretboardWood,
+          (id) => (ui.fretboardWood = id as typeof ui.fretboardWood),
+          (id) => WOOD_SWATCH[id as keyof typeof WOOD_SWATCH]
+        )}
+        {@render picker(
+          'Strings',
+          STRING_COUNTS,
+          ui.fretboardStrings,
+          (id) => (ui.fretboardStrings = id as typeof ui.fretboardStrings)
+        )}
+        {@render picker(
+          'Inlays',
+          INLAY_SHAPES,
+          ui.inlayShape,
+          (id) => (ui.inlayShape = id as typeof ui.inlayShape)
+        )}
+        <div class={cn(ui.inlayShape === 'none' && 'pointer-events-none opacity-50')}>
+          {@render picker(
+            'Inlay color',
+            INLAY_COLORS,
+            ui.inlayColor,
+            (id) => (ui.inlayColor = id as typeof ui.inlayColor),
+            (id) => INLAY_SWATCH[id as keyof typeof INLAY_SWATCH]
+          )}
+        </div>
+      </Collapsible.Content>
+    </Collapsible.Root>
 
     <section class="px-3 pb-4">
       {@render heading('Show notes as')}

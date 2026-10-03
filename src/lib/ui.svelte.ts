@@ -1,3 +1,5 @@
+import { INLAY_COLORS, INLAY_SHAPES, WOODS } from '#lib/components/fretboard.svelte'
+import type { InlayColor, InlayShape, Wood } from '#lib/components/fretboard.svelte'
 import { findScale } from '#lib/scales'
 
 /** App-wide UI state that outlives page navigation. */
@@ -26,7 +28,13 @@ export const ui = $state({
   /** An id from SCALES (src/lib/scales.ts). */
   scaleId: 'minor-pentatonic',
   /** How fretboard dots are labeled. */
-  fretLabels: 'notes' as 'notes' | 'intervals'
+  fretLabels: 'notes' as 'notes' | 'intervals',
+  /** Fretboard look (Appearance, in the Fretboard sidebar). */
+  fretboardWood: 'ebony' as Wood,
+  inlayShape: 'sharkfin' as InlayShape,
+  inlayColor: 'pearl' as InlayColor,
+  /** Strings drawn on the fretboard: the track's own (`auto`), or a 6/7/8-string neck. */
+  fretboardStrings: 'auto' as 'auto' | '6' | '7' | '8'
 })
 
 // Preferences that survive restarts, saved in the renderer's localStorage (kept by Electron in
@@ -39,7 +47,11 @@ const PERSISTED = [
   'scaleShown',
   'scaleRoot',
   'scaleId',
-  'fretLabels'
+  'fretLabels',
+  'fretboardWood',
+  'inlayShape',
+  'inlayColor',
+  'fretboardStrings'
 ] as const satisfies (keyof typeof ui)[]
 
 try {
@@ -52,6 +64,10 @@ try {
   if (!findScale(ui.scaleId)) ui.scaleId = 'minor-pentatonic'
   if (!Number.isInteger(ui.scaleRoot) || ui.scaleRoot < 0 || ui.scaleRoot > 11) ui.scaleRoot = 9
   if (!['notes', 'intervals'].includes(ui.fretLabels)) ui.fretLabels = 'notes'
+  if (!WOODS.some((w) => w.id === ui.fretboardWood)) ui.fretboardWood = 'ebony'
+  if (!INLAY_SHAPES.some((s) => s.id === ui.inlayShape)) ui.inlayShape = 'sharkfin'
+  if (!['auto', '6', '7', '8'].includes(ui.fretboardStrings)) ui.fretboardStrings = 'auto'
+  if (!INLAY_COLORS.some((c) => c.id === ui.inlayColor)) ui.inlayColor = 'pearl'
 } catch {
   // No saved preferences, or storage unavailable: keep the defaults.
 }

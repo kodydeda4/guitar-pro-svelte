@@ -102,6 +102,4 @@
   {/if}
 </main>
 
-{#if library.selected && session.score}
-  <TracksPanel score={session.score} />
-{/if}
+<TracksPanel score={library.selected ? session.score : null} />

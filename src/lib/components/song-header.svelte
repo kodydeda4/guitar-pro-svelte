@@ -13,7 +13,8 @@
   import type { LibrarySong } from '../../shared/library'
   import { session } from '#lib/session.svelte'
 
-  let { song }: { song: LibrarySong } = $props()
+  /** The selected song, or `null` when nothing is open (the header then says so). */
+  let { song }: { song: LibrarySong | null } = $props()
 
   function formatTime(ms: number): string {
     const total = Math.floor(ms / 1000)
@@ -21,11 +22,15 @@
   }
 
   const artworkUrl = $derived(
-    song.album ? albumArtworkUrl(song.artist, song.album) : artistArtworkUrl(song.artist)
+    !song
+      ? undefined
+      : song.album
+        ? albumArtworkUrl(song.artist, song.album)
+        : artistArtworkUrl(song.artist)
   )
 
   // While the next song loads, session.score still holds the previous one.
-  const score = $derived(session.loading ? null : session.score)
+  const score = $derived(!song || session.loading ? null : session.score)
   const trackLabel = $derived(
     session.visibleTracks.length > 1
       ? `${session.visibleTracks.length} tracks`
@@ -34,7 +39,7 @@
 
   // Search each service for the song; links open in the default browser (see setWindowOpenHandler).
   const query = $derived(
-    encodeURIComponent(`${score?.artist || song.artist} ${score?.title || song.title}`)
+    encodeURIComponent(`${score?.artist || song?.artist} ${score?.title || song?.title}`)
   )
   const services = $derived([
     {
@@ -53,7 +58,8 @@
      address-bar capsule (with playback progress along its bottom edge, like Safari's loading
      bar), then playback options and the track picker. -->
 <div class="flex h-full items-center gap-2 px-2">
-  <Transport player={session.player}>
+  <!-- No player without a song: the previous song's score stays loaded (hidden) underneath. -->
+  <Transport player={song ? session.player : null}>
     {#snippet children(playback)}
       <div
         class="toolbar-pill relative mx-auto max-w-2xl min-w-0 flex-1 gap-2 overflow-hidden pr-0.5 pl-1.5"
@@ -68,10 +74,14 @@
         {/key}
 
         <div class="min-w-0 flex-1 truncate text-center text-sm">
-          <span class="font-semibold">{score?.title || song.title}</span>
-          <span class="text-muted-foreground">
-            — {score?.artist || song.artist}{song.album ? ` · ${song.album}` : ''}
-          </span>
+          {#if song}
+            <span class="font-semibold">{score?.title || song.title}</span>
+            <span class="text-muted-foreground">
+              — {score?.artist || song.artist}{song.album ? ` · ${song.album}` : ''}
+            </span>
+          {:else}
+            <span class="text-muted-foreground">Nothing playing</span>
+          {/if}
         </div>
 
         {#if score}
@@ -84,7 +94,7 @@
         {/if}
 
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
+          <DropdownMenu.Trigger disabled={!song}>
             {#snippet child({ props })}
               <Button
                 {...props}

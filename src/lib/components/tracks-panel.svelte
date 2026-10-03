@@ -22,7 +22,8 @@
   import { ui } from '#lib/ui.svelte'
   import { cn } from '#lib/utils'
 
-  let { score }: { score: ScoreInfo } = $props()
+  /** The open song, or `null` when none is: the panel still shows, just empty. */
+  let { score }: { score: ScoreInfo | null } = $props()
 
   /** Width of one bar in the timeline, in px. */
   const CELL = 20
@@ -84,7 +85,9 @@
     return !!mix && (anySolo ? mix.solo : !mix.muted)
   }
   /** The fretboard shows the selected track (the first one drawn in the score). */
-  const fretboardTrack = $derived(score.tracks[session.selectedTrack])
+  const fretboardTrack = $derived(score?.tracks[session.selectedTrack])
+  /** With no song open, the fretboard shows a guitar in standard tuning (E A D G B E). */
+  const STANDARD_TUNING = [40, 45, 50, 55, 59, 64]
 
   let notes = $state<FrettedNote[]>([])
   $effect(() => session.player?.onNotesChange((n) => (notes = n)))
@@ -93,6 +96,21 @@
   const FRETS = 24
   /** Scale tones that aren't being played (played notes use the accent color). */
   const IDLE_COLOR = '#94a3b8'
+
+  /**
+   * The strings drawn on the fretboard, lowest first: the track's own, or (when a string count is
+   * picked in Appearance) extended with lower strings a fourth apart, B then F♯ below standard
+   * tuning, or with its lowest strings left off. `offset` maps a track string onto these.
+   */
+  const fretboardStrings = $derived.by((): { tuning: number[]; offset: number } => {
+    const tuning = score ? (fretboardTrack?.tuning ?? []) : STANDARD_TUNING
+    if (ui.fretboardStrings === 'auto' || tuning.length === 0) return { tuning, offset: 0 }
+    const count = Number(ui.fretboardStrings)
+    const offset = count - tuning.length
+    if (offset <= 0) return { tuning: tuning.slice(-offset), offset }
+    const lower = Array.from({ length: offset }, (_, i) => tuning[0] - 5 * (offset - i))
+    return { tuning: [...lower, ...tuning], offset }
+  })
 
   const scale = $derived(ui.scaleShown ? findScale(ui.scaleId) : undefined)
   /** Pitch classes in the scale (0 = C). */
@@ -104,26 +122,31 @@
    */
   const fretboardMarkers = $derived.by((): FretMarker[] => {
     const track = fretboardTrack
-    if (!track) return []
+    const { tuning, offset } = fretboardStrings
     const pitchClass = (midi: number): number => ((midi % 12) + 12) % 12
     const label = (midi: number): string =>
       scale && ui.fretLabels === 'intervals'
         ? degreeName(pitchClass(midi) - ui.scaleRoot)
         : noteName(midi)
 
-    const played = notes
-      .filter((n) => n.track === track.index && n.string < track.tuning.length)
-      .map((n): FretMarker => {
-        // Tabs write frets relative to the capo; the fretboard shows the real position.
-        const fret = n.fret + track.capo
-        const midi = track.tuning[n.string] + fret
-        return { string: n.string, fret, label: label(midi), active: true }
-      })
+    const played: FretMarker[] = !track
+      ? []
+      : notes
+          .filter(
+            (n) =>
+              n.track === track.index && n.string < track.tuning.length && n.string + offset >= 0
+          )
+          .map((n): FretMarker => {
+            // Tabs write frets relative to the capo; the fretboard shows the real position.
+            const fret = n.fret + track.capo
+            const midi = track.tuning[n.string] + fret
+            return { string: n.string + offset, fret, label: label(midi), active: true }
+          })
     if (!scale) return played
 
     const taken = new Set(played.map((m) => `${m.string}:${m.fret}`))
     const tones: FretMarker[] = []
-    track.tuning.forEach((open, string) => {
+    tuning.forEach((open, string) => {
       for (let fret = 0; fret <= FRETS; fret++) {
         const midi = open + fret
         if (!scaleTones.has(pitchClass(midi)) || taken.has(`${string}:${fret}`)) continue
@@ -138,10 +161,11 @@
     return [...tones, ...played]
   })
 
-  const timelineWidth = $derived(score.barCount * CELL)
+  const barCount = $derived(score?.barCount ?? 0)
+  const timelineWidth = $derived(barCount * CELL)
   /** Bar numbers at the start of each 4-bar group: 1, 5, 9… */
   const barNumbers = $derived(
-    Array.from({ length: score.barCount }, (_, i) => i + 1).filter((n) => (n - 1) % 4 === 0)
+    Array.from({ length: barCount }, (_, i) => i + 1).filter((n) => (n - 1) % 4 === 0)
   )
   /** The playhead sits at the start of the bar being played. */
   const playheadX = $derived((currentBar - 1) * CELL)
@@ -186,10 +210,7 @@
   /** Moves playback to the clicked bar (and shows the track, when a track lane was clicked). */
   function seekTo(event: MouseEvent, track?: number): void {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-    const bar = Math.min(
-      score.barCount - 1,
-      Math.max(0, Math.floor((event.clientX - rect.left) / CELL))
-    )
+    const bar = Math.min(barCount - 1, Math.max(0, Math.floor((event.clientX - rect.left) / CELL)))
     if (track !== undefined) session.showOnly(track)
     session.player?.seekToBar(bar)
   }
@@ -236,7 +257,7 @@
           <span
             class="rounded-full bg-muted px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums"
           >
-            {score.tracks.length}
+            {score?.tracks.length ?? 0}
           </span>
         </Tabs.Trigger>
         <Tabs.Trigger
@@ -252,7 +273,13 @@
 
     <!-- Details for the current view. -->
     <div class="ml-auto flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
-      {#if ui.tracksView === 'tracks'}
+      {#if !score}
+        <span class="whitespace-nowrap">
+          {ui.tracksView === 'fretboard'
+            ? `Standard tuning · ${fretboardStrings.tuning.length} strings`
+            : 'No song open'}
+        </span>
+      {:else if ui.tracksView === 'tracks'}
         <span class="flex items-center gap-1.5 whitespace-nowrap">
           <EyeIcon class="size-3.5" />
           {session.visibleTracks.length} of {score.tracks.length} shown
@@ -311,15 +338,32 @@
 
   {#if ui.tracksOpen && ui.tracksView === 'fretboard'}
     <div class="border-t" style:height="{ui.tracksHeight}px">
-      {#if fretboardTrack && fretboardTrack.tuning.length > 0}
-        <Fretboard tuning={fretboardTrack.tuning} frets={FRETS} markers={fretboardMarkers} />
+      {#if fretboardStrings.tuning.length > 0}
+        <Fretboard
+          tuning={fretboardStrings.tuning}
+          frets={FRETS}
+          markers={fretboardMarkers}
+          wood={ui.fretboardWood}
+          inlays={ui.inlayShape}
+          inlayColor={ui.inlayColor}
+        />
       {:else}
         <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
           Select a stringed track to see its fretboard.
         </div>
       {/if}
     </div>
-  {:else if ui.tracksOpen}
+  {:else if ui.tracksOpen && !score}
+    <div
+      class="flex flex-col items-center justify-center gap-1 border-t text-center"
+      style:height="{ui.tracksHeight}px"
+    >
+      <p class="text-sm font-medium">No song open</p>
+      <p class="text-xs text-muted-foreground">
+        Pick a song from the library to see its tracks here.
+      </p>
+    </div>
+  {:else if ui.tracksOpen && score}
     <!-- Logic/GarageBand-style arrangement: track headers on the left (sticky), regions where
          each track plays, a sections lane and a ruler (both sticky on top), and a playhead. -->
     <div

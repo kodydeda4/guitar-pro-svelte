@@ -4,6 +4,7 @@
 
   import AppRail from '#lib/components/app-rail.svelte'
   import Inspector from '#lib/components/inspector.svelte'
+  import InspectorEmpty from '#lib/components/inspector-empty.svelte'
   import SettingsSheet from '#lib/components/settings-sheet.svelte'
   import SongHeader from '#lib/components/song-header.svelte'
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
@@ -20,9 +21,7 @@
   library.load()
 
   const showSidebar = $derived(ui.sidebarOpen && page.route.id === '/(app)')
-  const showInspector = $derived(
-    ui.inspectorOpen && page.route.id === '/(app)' && !!library.selected && !!session.score
-  )
+  const showInspector = $derived(ui.inspectorOpen && page.route.id === '/(app)')
 
   // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
   //   ⌘1   show the Library in the sidebar
@@ -69,7 +68,7 @@
      page content in one rounded card. -->
 <div class="flex h-svh flex-col bg-frame" style="--library-width: 20rem; --inspector-width: 18rem">
   <TitleBar sidebarShown={showSidebar} inspectorShown={showInspector}>
-    {#if page.route.id === '/(app)' && library.selected}
+    {#if page.route.id === '/(app)'}
       <SongHeader song={library.selected} />
     {/if}
   </TitleBar>
@@ -94,8 +93,12 @@
         <div class="flex min-w-0 flex-1 flex-col">
           {@render children()}
         </div>
-        {#if showInspector && session.score}
-          <Inspector score={session.score} />
+        {#if showInspector}
+          {#if library.selected && session.score}
+            <Inspector score={session.score} />
+          {:else}
+            <InspectorEmpty />
+          {/if}
         {/if}
       </Sidebar.Provider>
     </div>

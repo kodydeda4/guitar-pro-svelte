@@ -19,6 +19,35 @@
     /** A note being played right now: ringed and glowing, drawn above everything else. */
     active?: boolean
   }
+
+  /** Fretboard woods, in the order they're offered. */
+  export const WOODS = [
+    { id: 'ebony', label: 'Ebony' },
+    { id: 'rosewood', label: 'Rosewood' },
+    { id: 'maple', label: 'Maple' }
+  ] as const
+  export type Wood = (typeof WOODS)[number]['id']
+
+  /** Inlay shapes, in the order they're offered. */
+  export const INLAY_SHAPES = [
+    { id: 'sharkfin', label: 'Sharkfin' },
+    { id: 'reverse-sharkfin', label: 'Reverse fin' },
+    { id: 'dots', label: 'Dots' },
+    { id: 'offset-top', label: 'Top dots' },
+    { id: 'offset-bottom', label: 'Bottom dots' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'none', label: 'None' }
+  ] as const
+  export type InlayShape = (typeof INLAY_SHAPES)[number]['id']
+
+  /** Inlay materials, in the order they're offered. */
+  export const INLAY_COLORS = [
+    { id: 'pearl', label: 'Pearl' },
+    { id: 'abalone', label: 'Abalone' },
+    { id: 'white', label: 'White' },
+    { id: 'black', label: 'Black' }
+  ] as const
+  export type InlayColor = (typeof INLAY_COLORS)[number]['id']
 </script>
 
 <script lang="ts">
@@ -27,15 +56,24 @@
   let {
     tuning,
     frets = 24,
-    markers = []
+    markers = [],
+    wood = 'ebony',
+    inlays = 'sharkfin',
+    inlayColor = 'pearl'
   }: {
     /** Open-string MIDI notes, lowest string first. */
     tuning: number[]
     frets?: number
     markers?: FretMarker[]
+    wood?: Wood
+    inlays?: InlayShape
+    inlayColor?: InlayColor
   } = $props()
 
   const INLAYS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
+  /** Dot inlays are doubled at the octaves: stacked across the board when centered, side by side
+      when offset toward an edge. */
+  const DOUBLE_INLAYS = [12, 24]
   /** The board runs a little past the last fret, like a real neck. */
   const LAST_FRET_AT = 98.5
 
@@ -63,10 +101,14 @@
   )
 </script>
 
-<!-- A metal-style guitar neck for the given tuning: jet-black ebony, pearl sharkfin inlays, jumbo
-     steel frets and real fret spacing. Fret numbers on top, open strings left of the nut, and
+<!-- A guitar neck for the given tuning, in the chosen wood and inlays, with jumbo steel frets and
+     real fret spacing. Fret numbers on top, open strings left of the nut, and
      markers (scale tones, played notes) on the strings. -->
-<div class="fretboard flex h-full min-h-0 flex-col bg-sidebar py-2 pr-5 pl-3 select-none">
+<div
+  class="fretboard flex h-full min-h-0 flex-col bg-sidebar py-2 pr-5 pl-3 select-none"
+  data-wood={wood}
+  data-inlay={inlayColor}
+>
   <!-- Fret numbers -->
   <div class="relative ml-14 h-5 shrink-0 text-[11px] font-medium tabular-nums">
     {#each fretNumbers as n (n)}
@@ -87,9 +129,23 @@
       <div class="grain absolute inset-0 rounded-r-sm"></div>
 
       {#each fretNumbers as n (n)}
-        {#if inlaid(n)}
+        {#if !inlaid(n) || inlays === 'none'}
+          <!-- No inlay at this fret. -->
+        {:else if inlays === 'dots'}
+          {#each DOUBLE_INLAYS.includes(n) ? ['30%', '70%'] : ['50%'] as top (top)}
+            <span class="inlay dot-inlay absolute" style:left={noteX(n)} style:top></span>
+          {/each}
+        {:else if inlays === 'offset-top' || inlays === 'offset-bottom'}
+          {#each DOUBLE_INLAYS.includes(n) ? ['-0.5rem', '0.5rem'] : ['0rem'] as shift (shift)}
+            <span
+              class="inlay dot-inlay absolute"
+              style:left="calc({noteX(n)} + {shift})"
+              style:top={inlays === 'offset-top' ? '14%' : '86%'}
+            ></span>
+          {/each}
+        {:else}
           <span
-            class="sharkfin absolute"
+            class={cn('inlay absolute', inlays)}
             style:left="{fretX(n - 1)}%"
             style:width="{fretX(n) - fretX(n - 1)}%"
           ></span>
@@ -135,10 +191,59 @@
 </div>
 
 <style>
+  /* Woods: edge, body and lit-center tones, and how the grain shows on them. */
   .fretboard {
-    --ebony: #0d0c0c;
-    --ebony-edge: #040404;
+    --wood-edge: #040404;
+    --wood: #0d0c0c;
+    --wood-lit: #1a191c;
+    --grain-opacity: 0.35;
+    --grain-blend: screen;
+    --grain-filter: none;
     --binding: rgb(233 227 211 / 0.15);
+  }
+  .fretboard[data-wood='rosewood'] {
+    --wood-edge: #1a0e09;
+    --wood: #32201a;
+    --wood-lit: #452c21;
+    --grain-opacity: 0.45;
+    --binding: rgb(233 227 211 / 0.2);
+  }
+  /* Maple is pale: its grain is drawn dark instead of light. */
+  .fretboard[data-wood='maple'] {
+    --wood-edge: #b88f58;
+    --wood: #d9b57c;
+    --wood-lit: #e8c994;
+    --grain-opacity: 0.4;
+    --grain-blend: multiply;
+    --grain-filter: invert(1) sepia(1);
+    --binding: rgb(0 0 0 / 0.18);
+  }
+
+  /* Inlay materials. */
+  .fretboard {
+    --inlay-fill:
+      radial-gradient(ellipse at 70% 75%, rgb(190 225 235 / 0.7), transparent 55%),
+      radial-gradient(ellipse at 55% 40%, rgb(235 210 240 / 0.6), transparent 50%),
+      repeating-linear-gradient(115deg, rgb(255 255 255 / 0.12) 0 2px, transparent 2px 5px),
+      linear-gradient(125deg, #f3efe6, #c9d4da 35%, #ece2ef 60%, #b4c1c7 85%, #e6ede8);
+    --inlay-opacity: 0.62;
+  }
+  .fretboard[data-inlay='abalone'] {
+    --inlay-fill:
+      radial-gradient(ellipse at 25% 70%, rgb(40 200 170 / 0.85), transparent 50%),
+      radial-gradient(ellipse at 75% 30%, rgb(120 90 220 / 0.8), transparent 55%),
+      radial-gradient(ellipse at 60% 80%, rgb(60 140 230 / 0.8), transparent 50%),
+      repeating-linear-gradient(105deg, rgb(255 255 255 / 0.15) 0 1px, transparent 1px 4px),
+      linear-gradient(135deg, #2bb59b, #3d6fd1 40%, #7b4fc9 70%, #2aa5a0);
+    --inlay-opacity: 0.7;
+  }
+  .fretboard[data-inlay='white'] {
+    --inlay-fill: linear-gradient(180deg, #f6f4ee, #e4e0d6);
+    --inlay-opacity: 0.85;
+  }
+  .fretboard[data-inlay='black'] {
+    --inlay-fill: linear-gradient(180deg, #1b1b1d, #050505);
+    --inlay-opacity: 0.9;
   }
 
   /* The board is radiused: lit along the middle, falling off into shadow toward both edges. */
@@ -146,13 +251,13 @@
     container-type: size;
     background: linear-gradient(
       180deg,
-      var(--ebony-edge),
-      var(--ebony) 12%,
-      #18171a 42%,
-      #1a191c 50%,
-      #151416 60%,
-      var(--ebony) 88%,
-      var(--ebony-edge)
+      var(--wood-edge),
+      var(--wood) 12%,
+      color-mix(in oklab, var(--wood-lit) 85%, var(--wood)) 42%,
+      var(--wood-lit) 50%,
+      color-mix(in oklab, var(--wood-lit) 60%, var(--wood)) 60%,
+      var(--wood) 88%,
+      var(--wood-edge)
     );
     /* Cream binding on both edges (with the board's dark lip just inside it), and a deep drop
        shadow: a tight contact shadow plus a wide, soft one so the neck floats off the panel. */
@@ -166,26 +271,42 @@
       0 24px 48px rgb(0 0 0 / 0.55);
   }
 
-  /* Ebony grain: long streaks and pores running along the neck. */
+  /* Grain: long streaks and pores running along the neck. */
   .grain {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0025 0.42' numOctaves='4' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.72 0 0 0 0 0.6 0.55 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
     background-size: 100% 100%;
-    opacity: 0.35;
-    mix-blend-mode: screen;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+    filter: var(--grain-filter);
     pointer-events: none;
   }
 
-  /* Mother-of-pearl sharkfins: a wedge rising toward the body, with a shimmer that shifts across it. */
-  .sharkfin {
+  .inlay {
+    background: var(--inlay-fill);
+    opacity: var(--inlay-opacity);
+  }
+  /* A wedge rising toward the body, filling most of the fret space. */
+  .inlay.sharkfin {
     top: 10%;
     bottom: 10%;
     clip-path: polygon(12% 100%, 88% 0, 88% 100%);
-    background:
-      radial-gradient(ellipse at 70% 75%, rgb(190 225 235 / 0.7), transparent 55%),
-      radial-gradient(ellipse at 55% 40%, rgb(235 210 240 / 0.6), transparent 50%),
-      repeating-linear-gradient(115deg, rgb(255 255 255 / 0.12) 0 2px, transparent 2px 5px),
-      linear-gradient(125deg, #f3efe6, #c9d4da 35%, #ece2ef 60%, #b4c1c7 85%, #e6ede8);
-    opacity: 0.62;
+  }
+  /* Mirrored: the tall edge toward the nut. */
+  .inlay.reverse-sharkfin {
+    top: 10%;
+    bottom: 10%;
+    clip-path: polygon(12% 0, 12% 100%, 88% 100%);
+  }
+  .inlay.blocks {
+    top: 12%;
+    bottom: 12%;
+    clip-path: inset(0 16%);
+  }
+  .inlay.dot-inlay {
+    width: 0.8rem;
+    height: 0.8rem;
+    translate: -50% -50%;
+    border-radius: 9999px;
   }
 
   /* Black graphite nut, slightly proud of the board. */
@@ -235,7 +356,7 @@
     z-index: 3;
     padding: 0 3px;
     border-radius: 3px;
-    background: var(--ebony);
+    background: var(--wood);
     color: rgb(255 255 255 / 0.4);
     font-size: 10px;
     font-weight: 500;
