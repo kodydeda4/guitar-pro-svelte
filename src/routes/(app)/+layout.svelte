@@ -11,6 +11,9 @@
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
   import TracksSidebar from '#lib/components/tracks-sidebar.svelte'
   import FretboardSidebar from '#lib/components/fretboard-sidebar.svelte'
+  import GoalsSidebar from '#lib/components/goals-sidebar.svelte'
+  // Loaded here so practice time is tracked whichever page the sidebar shows.
+  import '#lib/practice.svelte'
   import TitleBar from '#lib/components/title-bar.svelte'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { library } from '#lib/library/library.svelte'
@@ -28,6 +31,7 @@
   //   ⌘1   show the Library in the sidebar
   //   ⌘2   show the open song's Tracks in the sidebar
   //   ⌘3   show the Fretboard (scale picker) in the sidebar, and the fretboard below
+  //   ⌘4   show practice Goals in the sidebar
   //   ⌘0   show/hide the sidebar
   //   ⌘⇧0  show/hide the inspector
   //   ⌘,   open Settings (a sheet); in the desktop app the menu's Settings… item handles it
@@ -43,9 +47,9 @@
       event.preventDefault()
       if (event.shiftKey) ui.inspectorOpen = !ui.inspectorOpen
       else ui.sidebarOpen = !ui.sidebarOpen
-    } else if (['1', '2', '3'].includes(event.key) && !event.shiftKey && !event.altKey) {
+    } else if (['1', '2', '3', '4'].includes(event.key) && !event.shiftKey && !event.altKey) {
       event.preventDefault()
-      ui.sidebarView = (['library', 'tracks', 'fretboard'] as const)[Number(event.key) - 1]
+      ui.sidebarView = (['library', 'tracks', 'fretboard', 'goals'] as const)[Number(event.key) - 1]
       if (ui.sidebarView === 'fretboard') {
         ui.tracksView = 'fretboard'
         ui.tracksOpen = true
@@ -89,6 +93,8 @@
             <TracksSidebar />
           {:else if ui.sidebarView === 'fretboard'}
             <FretboardSidebar />
+          {:else if ui.sidebarView === 'goals'}
+            <GoalsSidebar />
           {:else}
             <LibrarySidebar {library} />
           {/if}

@@ -23,6 +23,8 @@ export class Library {
   error = $state<string | null>(null)
   query = $state('')
   selected = $state<LibrarySong | null>(null)
+  /** An album to bring into view in the library sidebar (set by the home screen's covers). */
+  focusAlbum = $state<{ artist: string; album: string } | null>(null)
   /** Whether the library has been read at least once (so `selected` reflects a real choice). */
   ready = $state(false)
 

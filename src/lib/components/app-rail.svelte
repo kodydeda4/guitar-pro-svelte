@@ -1,5 +1,6 @@
 <script lang="ts">
   import GuitarIcon from '@lucide/svelte/icons/guitar'
+  import TargetIcon from '@lucide/svelte/icons/target'
   import LibraryIcon from '@lucide/svelte/icons/library'
   import ListMusicIcon from '@lucide/svelte/icons/list-music'
   import MoonIcon from '@lucide/svelte/icons/moon'
@@ -51,6 +52,13 @@
           ui.tracksOpen = true
         }
       }
+    },
+    {
+      label: 'Goals',
+      href: '#/',
+      icon: TargetIcon,
+      active: ui.sidebarView === 'goals' && !ui.settingsOpen,
+      onclick: () => showSidebar('goals')
     }
   ])
 

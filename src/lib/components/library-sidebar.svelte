@@ -43,6 +43,31 @@
     searchInput?.focus()
   }
 
+  /** The album just brought into view from the home screen, flashed so it's easy to spot. */
+  let flashKey = $state<string | null>(null)
+  let flashTimer: ReturnType<typeof setTimeout> | undefined
+
+  // The home screen asked to show an album: switch to Albums, clear any search, open the album
+  // and scroll it into the middle of the list.
+  $effect(() => {
+    const focus = library.focusAlbum
+    if (!focus) return
+    library.focusAlbum = null
+    const key = `album:${focus.artist}/${focus.album}`
+    library.query = ''
+    ui.libraryView = 'albums'
+    open[key] = true
+    flashKey = key
+    tick().then(() =>
+      document
+        .querySelector(`[data-album-key="${CSS.escape(key)}"]`)
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    )
+    // (Not an effect cleanup: clearing the request above re-runs this effect.)
+    clearTimeout(flashTimer)
+    flashTimer = setTimeout(() => (flashKey = null), 1600)
+  })
+
   const folderName = $derived(library.root?.split('/').filter(Boolean).at(-1) ?? null)
 </script>
 
@@ -179,7 +204,13 @@
               onOpenChange={(value) => (open[key] = value)}
               class="group/collapsible"
             >
-              <Sidebar.MenuItem>
+              <Sidebar.MenuItem
+                data-album-key={key}
+                class={cn(
+                  'rounded-md transition-colors duration-700',
+                  flashKey === key && 'bg-primary/15'
+                )}
+              >
                 <Collapsible.Trigger>
                   {#snippet child({ props })}
                     <Sidebar.MenuButton {...props} class="h-14">

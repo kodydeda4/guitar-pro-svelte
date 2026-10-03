@@ -7,7 +7,7 @@ export const ui = $state({
   /** Whether the sidebar next to the rail is shown. */
   sidebarOpen: true,
   /** What the sidebar shows, picked in the rail: the library, the song's tracks, or scales. */
-  sidebarView: 'library' as 'library' | 'tracks' | 'fretboard',
+  sidebarView: 'library' as 'library' | 'tracks' | 'fretboard' | 'goals',
   /** Whether the Settings sheet is open. */
   settingsOpen: false,
   /** Which list the library panel shows. */
@@ -81,7 +81,8 @@ try {
     if (typeof saved[key] === typeof ui[key]) Object.assign(ui, { [key]: saved[key] })
   }
   if (!['tracks', 'fretboard'].includes(ui.tracksView)) ui.tracksView = 'tracks'
-  if (!['library', 'tracks', 'fretboard'].includes(ui.sidebarView)) ui.sidebarView = 'library'
+  if (!['library', 'tracks', 'fretboard', 'goals'].includes(ui.sidebarView))
+    ui.sidebarView = 'library'
   if (!['artists', 'albums', 'songs'].includes(ui.libraryView)) ui.libraryView = 'artists'
   if (!['song', 'track'].includes(ui.inspectorTab)) ui.inspectorTab = 'track'
   if (!['main', 'appearance'].includes(ui.fretboardPage)) ui.fretboardPage = 'main'
