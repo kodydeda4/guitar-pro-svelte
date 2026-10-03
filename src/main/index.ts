@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
 import { readFile } from 'fs/promises'
 import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -100,6 +100,12 @@ async function snapshot(root: string | null): Promise<LibrarySnapshot> {
 }
 
 function registerLibraryHandlers(): void {
+  // The vibrancy material behind the frame takes its light/dark look from nativeTheme, so it
+  // follows the app's theme setting rather than the system appearance.
+  ipcMain.on('theme:set', (_event, theme: 'light' | 'dark' | 'system') => {
+    if (['light', 'dark', 'system'].includes(theme)) nativeTheme.themeSource = theme
+  })
+
   ipcMain.handle('library:get', async () => snapshot((await loadSettings()).libraryRoot))
 
   ipcMain.handle('library:choose-folder', async (event) => {

@@ -27,4 +27,6 @@ export interface AppApi {
     /** Reads a song's file. Only paths inside the library folder are allowed. */
     readSong(path: string): Promise<Uint8Array>
   }
+  /** Makes the window's native parts (the glass behind the rail) follow the app's theme. */
+  setTheme(theme: 'light' | 'dark' | 'system'): void
 }

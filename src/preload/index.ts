@@ -8,7 +8,8 @@ const api: AppApi = {
     get: () => ipcRenderer.invoke('library:get'),
     chooseFolder: () => ipcRenderer.invoke('library:choose-folder'),
     readSong: (path) => ipcRenderer.invoke('library:read-song', path)
-  }
+  },
+  setTheme: (theme) => ipcRenderer.send('theme:set', theme)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

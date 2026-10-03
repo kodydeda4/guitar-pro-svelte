@@ -13,8 +13,16 @@
   import { Toggle } from '#lib/components/ui/toggle'
   import * as Tooltip from '#lib/components/ui/tooltip'
   import type { PlaybackState, ScorePlayer } from '#lib/render/types'
+  import type { Snippet } from 'svelte'
 
-  let { player, barCount }: { player: ScorePlayer | null; barCount: number } = $props()
+  let {
+    player,
+    children
+  }: {
+    player: ScorePlayer | null
+    /** Drawn between the play controls and the playback options (the song capsule). */
+    children?: Snippet<[PlaybackState | null]>
+  } = $props()
 
   let playback = $state<PlaybackState | null>(null)
   let speed = $state('1')
@@ -31,12 +39,22 @@
   $effect(() => player?.setCountIn(countIn))
 
   const ready = $derived(playback?.ready ?? false)
+  const toggles = [
+    { label: 'Loop', icon: RepeatIcon, get: () => looping, set: (v: boolean) => (looping = v) },
+    {
+      label: 'Metronome',
+      icon: TimerIcon,
+      get: () => metronome,
+      set: (v: boolean) => (metronome = v)
+    },
+    {
+      label: 'Count-in',
+      icon: TimerResetIcon,
+      get: () => countIn,
+      set: (v: boolean) => (countIn = v)
+    }
+  ]
   const speeds = ['0.25', '0.5', '0.75', '0.9', '1', '1.25', '1.5']
-
-  function formatTime(ms: number): string {
-    const total = Math.floor(ms / 1000)
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
-  }
 
   function onkeydown(event: KeyboardEvent): void {
     if (event.code !== 'Space' || !ready) return
@@ -49,11 +67,19 @@
 
 <svelte:window {onkeydown} />
 
-<div class="flex items-center gap-1">
+<!-- Safari-style: play controls and options each in a pill, with the song capsule between. -->
+<div class="toolbar-pill shrink-0 gap-0.5 px-0.5">
   <Tooltip.Root>
     <Tooltip.Trigger>
       {#snippet child({ props })}
-        <Button {...props} variant="ghost" size="icon" disabled={!ready} onclick={() => player?.stop()}>
+        <Button
+          {...props}
+          variant="ghost"
+          size="icon-sm"
+          class="rounded-full"
+          disabled={!ready}
+          onclick={() => player?.stop()}
+        >
           <SkipBackIcon />
         </Button>
       {/snippet}
@@ -64,7 +90,13 @@
   <Tooltip.Root>
     <Tooltip.Trigger>
       {#snippet child({ props })}
-        <Button {...props} size="icon" disabled={!ready} onclick={() => player?.playPause()}>
+        <Button
+          {...props}
+          size="icon-sm"
+          class="rounded-full"
+          disabled={!ready}
+          onclick={() => player?.playPause()}
+        >
           {#if !ready}
             <Spinner />
           {:else if playback?.playing}
@@ -76,27 +108,21 @@
       {/snippet}
     </Tooltip.Trigger>
     <Tooltip.Content>
-      {ready ? (playback?.playing ? 'Pause' : 'Play') : 'Loading sounds…'} <Kbd.Root>Space</Kbd.Root>
+      {ready ? (playback?.playing ? 'Pause' : 'Play') : 'Loading sounds…'}
+      <Kbd.Root>Space</Kbd.Root>
     </Tooltip.Content>
   </Tooltip.Root>
+</div>
 
-  <!-- LCD-style readout: bar and time -->
-  <div
-    class="mx-1 flex h-9 items-center gap-3 rounded-md border bg-muted/50 px-3 font-mono text-xs tabular-nums"
-  >
-    <span>
-      <span class="text-muted-foreground">Bar</span>
-      {playback?.currentBar ?? 1}/{barCount}
-    </span>
-    <span>
-      {formatTime(playback?.currentTime ?? 0)}<span class="text-muted-foreground">
-        / {formatTime(playback?.endTime ?? 0)}</span
-      >
-    </span>
-  </div>
+{@render children?.(playback)}
 
+<div class="toolbar-pill shrink-0 gap-0.5 px-0.5">
   <Select.Root type="single" bind:value={speed}>
-    <Select.Trigger size="sm" class="w-20 font-mono text-xs" aria-label="Playback speed">
+    <Select.Trigger
+      size="sm"
+      class="w-[4.5rem] rounded-full border-0 bg-transparent text-xs tabular-nums shadow-none hover:bg-muted dark:bg-transparent dark:hover:bg-muted"
+      aria-label="Playback speed"
+    >
       {Math.round(Number(speed) * 100)}%
     </Select.Trigger>
     <Select.Content>
@@ -106,30 +132,23 @@
     </Select.Content>
   </Select.Root>
 
-  <Tooltip.Root>
-    <Tooltip.Trigger>
-      {#snippet child({ props })}
-        <Toggle {...props} size="sm" bind:pressed={looping} aria-label="Loop"><RepeatIcon /></Toggle>
-      {/snippet}
-    </Tooltip.Trigger>
-    <Tooltip.Content>Loop</Tooltip.Content>
-  </Tooltip.Root>
-
-  <Tooltip.Root>
-    <Tooltip.Trigger>
-      {#snippet child({ props })}
-        <Toggle {...props} size="sm" bind:pressed={metronome} aria-label="Metronome"><TimerIcon /></Toggle>
-      {/snippet}
-    </Tooltip.Trigger>
-    <Tooltip.Content>Metronome</Tooltip.Content>
-  </Tooltip.Root>
-
-  <Tooltip.Root>
-    <Tooltip.Trigger>
-      {#snippet child({ props })}
-        <Toggle {...props} size="sm" bind:pressed={countIn} aria-label="Count-in"><TimerResetIcon /></Toggle>
-      {/snippet}
-    </Tooltip.Trigger>
-    <Tooltip.Content>Count-in</Tooltip.Content>
-  </Tooltip.Root>
+  {#each toggles as option (option.label)}
+    <Tooltip.Root>
+      <Tooltip.Trigger>
+        {#snippet child({ props })}
+          <Toggle
+            {...props}
+            size="sm"
+            class="size-8 min-w-8 rounded-full px-0"
+            pressed={option.get()}
+            onPressedChange={option.set}
+            aria-label={option.label}
+          >
+            <option.icon />
+          </Toggle>
+        {/snippet}
+      </Tooltip.Trigger>
+      <Tooltip.Content>{option.label}</Tooltip.Content>
+    </Tooltip.Root>
+  {/each}
 </div>

@@ -9,6 +9,17 @@
 @custom-variant mac (&:where([data-platform="darwin"] *));
 @custom-variant win (&:where([data-platform="win32"] *, [data-platform="linux"] *));
 
+/* Safari-style toolbar groups: controls in the title bar sit in rounded translucent pills. */
+@utility toolbar-pill {
+	display: flex;
+	height: --spacing(9);
+	align-items: center;
+	border-radius: calc(infinity * 1px);
+	border: 1px solid color-mix(in oklab, var(--foreground) 6%, transparent);
+	background: color-mix(in oklab, var(--foreground) 7%, transparent);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
 /* With the native title bar hidden, these regions move the window when dragged.
    Interactive elements inside them must opt out or they stop receiving clicks. */
 .titlebar-drag {
@@ -99,7 +110,7 @@
 	--frame: rgb(227 229 232 / 0.2);
 }
 .dark:is([data-platform="darwin"], [data-platform="win32"]) {
-	--frame: rgb(18 18 20 / 0.2);
+	--frame: rgb(10 10 12 / 0.82);
 }
 
 @theme inline {

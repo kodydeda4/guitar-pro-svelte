@@ -34,7 +34,8 @@
   >
     <Button
       variant="ghost"
-      size="icon-sm"
+      size="icon"
+      class="toolbar-pill w-12 rounded-full"
       aria-label="Toggle library"
       disabled={!onLibrary}
       onclick={() => (ui.libraryOpen = !ui.libraryOpen)}
@@ -53,7 +54,8 @@
   >
     <Button
       variant="ghost"
-      size="icon-sm"
+      size="icon"
+      class="toolbar-pill w-12 rounded-full"
       aria-label="Toggle inspector"
       disabled={!onLibrary}
       onclick={() => (ui.inspectorOpen = !ui.inspectorOpen)}
