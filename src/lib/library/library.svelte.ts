@@ -6,6 +6,12 @@ export interface ArtistGroup {
   songCount: number
 }
 
+export interface AlbumGroup {
+  artist: string
+  album: string
+  songs: LibrarySong[]
+}
+
 /** The tabs library: the chosen folder, its songs, search and the selected song. */
 export class Library {
   /** False when running in a plain browser, where there's no file system access. */
@@ -20,6 +26,12 @@ export class Library {
 
   readonly filtered = $derived(filterSongs(this.songs, this.query))
   readonly artists = $derived(groupByArtist(this.filtered))
+  /** Every named album, A–Z. Songs without an album only appear under artists and songs. */
+  readonly albums = $derived(listAlbums(this.artists))
+  /** Every song, A–Z by title. */
+  readonly songsByTitle = $derived(
+    [...this.filtered].sort((a, b) => a.title.localeCompare(b.title))
+  )
 
   async load(): Promise<void> {
     await this.#run(() => window.api!.library.get())
@@ -81,6 +93,16 @@ function groupByArtist(songs: LibrarySong[]): ArtistGroup[] {
     group.songCount++
   }
   return groups
+}
+
+function listAlbums(artists: ArtistGroup[]): AlbumGroup[] {
+  return artists
+    .flatMap((group) =>
+      group.albums.flatMap((a) =>
+        a.album ? [{ artist: group.artist, album: a.album, songs: a.songs }] : []
+      )
+    )
+    .sort((a, b) => a.album.localeCompare(b.album))
 }
 
 /** The app-wide library, shared by the sidebar and every page. */

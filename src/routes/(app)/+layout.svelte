@@ -22,12 +22,17 @@
   )
 
   // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
+  //   ⌘1   go to Library (and show the library panel)
   //   ⌘,   open Settings
   //   ⌘⇧Y  expand/collapse the tracks panel
   function onkeydown(event: KeyboardEvent): void {
     const modifier = window.electron?.process.platform === 'darwin' ? event.metaKey : event.ctrlKey
     if (!modifier) return
-    if (event.key === ',') {
+    if (event.key === '1' && !event.shiftKey && !event.altKey) {
+      event.preventDefault()
+      ui.libraryOpen = true
+      goto('#/')
+    } else if (event.key === ',') {
       event.preventDefault()
       goto('#/settings')
     } else if (event.shiftKey && event.code === 'KeyY') {
