@@ -225,7 +225,7 @@
           style:--spread={spread}
           style:--lift={Math.abs(spread)}
           style:--push="{away === 0 ? 0 : Math.sign(away) * (0.75 / Math.abs(away))}rem"
-          style:z-index={lifted === i ? 20 : 10 - Math.abs(Math.round(spread * 2))}
+          style:z-index={10 - Math.abs(Math.round(spread * 2))}
           in:fly={{ x: direction * 60, opacity: 0, duration: 700, easing: cubicOut }}
           out:fade={{ duration: 300 }}
           onpointerenter={() => (hovered = i)}
