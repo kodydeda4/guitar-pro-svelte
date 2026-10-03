@@ -33,4 +33,6 @@ export interface AppApi {
   getAccentColor(): Promise<string | null>
   /** Calls `listener` whenever the user changes the OS accent color; returns an unsubscribe. */
   onAccentColorChange(listener: (color: string | null) => void): () => void
+  /** Calls `listener` when Settings… is chosen from the app menu; returns an unsubscribe. */
+  onOpenSettings(listener: () => void): () => void
 }

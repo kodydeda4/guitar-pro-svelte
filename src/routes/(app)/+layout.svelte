@@ -4,6 +4,7 @@
 
   import AppRail from '#lib/components/app-rail.svelte'
   import Inspector from '#lib/components/inspector.svelte'
+  import SettingsSheet from '#lib/components/settings-sheet.svelte'
   import SongHeader from '#lib/components/song-header.svelte'
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
   import TitleBar from '#lib/components/title-bar.svelte'
@@ -25,8 +26,11 @@
   //   ⌘1   go to Library (and show the library panel)
   //   ⌘0   show/hide the library panel
   //   ⌘⇧0  show/hide the inspector
-  //   ⌘,   open Settings
+  //   ⌘,   open Settings (a sheet); in the desktop app the menu's Settings… item handles it
   //   ⌘⇧Y  expand/collapse the tracks panel
+  // Settings… in the app menu (src/main/index.ts).
+  $effect(() => window.api?.onOpenSettings(() => (ui.settingsOpen = true)))
+
   function onkeydown(event: KeyboardEvent): void {
     const modifier = window.electron?.process.platform === 'darwin' ? event.metaKey : event.ctrlKey
     if (!modifier) return
@@ -37,10 +41,11 @@
     } else if (event.key === '1' && !event.shiftKey && !event.altKey) {
       event.preventDefault()
       ui.libraryOpen = true
+      ui.settingsOpen = false
       goto('#/')
     } else if (event.key === ',') {
       event.preventDefault()
-      goto('#/settings')
+      ui.settingsOpen = true
     } else if (event.shiftKey && event.code === 'KeyY') {
       event.preventDefault()
       ui.tracksOpen = !ui.tracksOpen
@@ -49,13 +54,11 @@
 </script>
 
 <svelte:window {onkeydown} />
+<SettingsSheet />
 
 <!-- Slack-style frame: title bar across the top, rail on the left, and the library panel plus
      page content in one rounded card. -->
-<div
-  class="flex h-svh flex-col bg-frame"
-  style="--library-width: 20rem; --inspector-width: 18rem"
->
+<div class="flex h-svh flex-col bg-frame" style="--library-width: 20rem; --inspector-width: 18rem">
   <TitleBar libraryShown={showLibrary} inspectorShown={showInspector}>
     {#if page.route.id === '/(app)' && library.selected}
       <SongHeader song={library.selected} />

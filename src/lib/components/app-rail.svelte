@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from '$app/state'
   import LibraryIcon from '@lucide/svelte/icons/library'
   import MoonIcon from '@lucide/svelte/icons/moon'
   import SettingsIcon from '@lucide/svelte/icons/settings'
@@ -10,23 +9,25 @@
   import { ui } from '#lib/ui.svelte'
   import { cn } from '#lib/utils'
 
-  const onSettings = $derived(page.route.id === '/(app)/settings')
+  const itemClass =
+    'group flex w-full flex-col items-center gap-1 text-[11px] font-medium text-muted-foreground'
 
   const items = $derived([
     {
       label: 'Library',
       href: '#/',
       icon: LibraryIcon,
-      active: !onSettings,
+      active: !ui.settingsOpen,
       // Clicking Library while already there shows/hides the library panel.
-      onclick: () => (ui.libraryOpen = onSettings ? true : !ui.libraryOpen)
+      onclick: () => (ui.libraryOpen = !ui.libraryOpen)
     },
     {
       label: 'Settings',
-      href: '#/settings',
+      // Settings is a sheet over the library, not a page.
+      href: undefined,
       icon: SettingsIcon,
-      active: onSettings,
-      onclick: () => {}
+      active: ui.settingsOpen,
+      onclick: () => (ui.settingsOpen = true)
     }
   ])
 </script>
@@ -34,12 +35,7 @@
 <!-- Slack-style navigation rail: icon buttons with labels underneath. -->
 <nav class="flex w-[4.5rem] shrink-0 flex-col items-center gap-3 pt-1 pb-3">
   {#each items as item (item.label)}
-    <a
-      href={item.href}
-      onclick={item.onclick}
-      class="group flex w-full flex-col items-center gap-1 text-[11px] font-medium text-muted-foreground"
-      aria-current={item.active ? 'page' : undefined}
-    >
+    {#snippet content()}
       <span
         class={cn(
           'flex size-9 items-center justify-center rounded-lg transition-colors group-hover:bg-foreground/10 [&_svg]:size-5',
@@ -49,7 +45,21 @@
         <item.icon />
       </span>
       <span class={item.active ? 'text-foreground' : ''}>{item.label}</span>
-    </a>
+    {/snippet}
+    {#if item.href}
+      <a
+        href={item.href}
+        onclick={item.onclick}
+        class={itemClass}
+        aria-current={item.active ? 'page' : undefined}
+      >
+        {@render content()}
+      </a>
+    {:else}
+      <button type="button" onclick={item.onclick} class={itemClass} aria-pressed={item.active}>
+        {@render content()}
+      </button>
+    {/if}
   {/each}
 
   <div class="flex-1"></div>

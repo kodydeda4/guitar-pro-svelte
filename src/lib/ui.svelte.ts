@@ -2,6 +2,8 @@
 export const ui = $state({
   /** Whether the library panel next to the rail is shown. */
   libraryOpen: true,
+  /** Whether the Settings sheet is open. */
+  settingsOpen: false,
   /** Which list the library panel shows. */
   libraryView: 'artists' as 'artists' | 'albums' | 'songs',
   /** Whether the inspector (song/track details) is shown on the right. */

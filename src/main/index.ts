@@ -4,6 +4,7 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  Menu,
   nativeTheme,
   systemPreferences
 } from 'electron'
@@ -15,6 +16,11 @@ import type { LibrarySnapshot } from '../shared/library'
 import { handleArtworkRequests, registerArtworkScheme } from './artwork'
 import { isInside, scanLibrary } from './library'
 import { loadSettings, saveSettings } from './settings'
+
+// Show as "Guitar Pro" (app menu, About/Quit items) instead of the package name. Keep the data
+// folder where it was before the rename, so saved settings and the artwork cache stay put.
+app.setPath('userData', join(app.getPath('appData'), 'guitar-pro-svelte'))
+app.setName('Guitar Pro')
 
 registerArtworkScheme()
 
@@ -89,6 +95,7 @@ app.whenReady().then(() => {
 
   registerLibraryHandlers()
   handleArtworkRequests()
+  Menu.setApplicationMenu(buildMenu())
 
   createWindow()
 
@@ -173,4 +180,43 @@ function accentColor(): string | null {
   // Returned as RRGGBBAA.
   const color = systemPreferences.getAccentColor()
   return /^[0-9a-f]{6}/i.test(color) ? `#${color.slice(0, 6)}` : null
+}
+
+/** Electron's standard menus, plus Settings… (⌘,), which opens the Settings sheet. */
+function buildMenu(): Menu {
+  const settings: Electron.MenuItemConstructorOptions = {
+    label: 'Settings…',
+    accelerator: 'CmdOrCtrl+,',
+    click: () => BrowserWindow.getFocusedWindow()?.webContents.send('app:open-settings')
+  }
+  const template: Electron.MenuItemConstructorOptions[] =
+    process.platform === 'darwin'
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' },
+              { type: 'separator' },
+              settings,
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' }
+            ]
+          },
+          { role: 'editMenu' },
+          { role: 'viewMenu' },
+          { role: 'windowMenu' }
+        ]
+      : [
+          { label: 'File', submenu: [settings, { type: 'separator' }, { role: 'quit' }] },
+          { role: 'editMenu' },
+          { role: 'viewMenu' },
+          { role: 'windowMenu' }
+        ]
+  return Menu.buildFromTemplate(template)
 }

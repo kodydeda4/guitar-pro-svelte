@@ -15,6 +15,11 @@ const api: AppApi = {
     const handler = (_event: unknown, color: string | null): void => listener(color)
     ipcRenderer.on('system:accent-color-changed', handler)
     return () => ipcRenderer.removeListener('system:accent-color-changed', handler)
+  },
+  onOpenSettings: (listener) => {
+    const handler = (): void => listener()
+    ipcRenderer.on('app:open-settings', handler)
+    return () => ipcRenderer.removeListener('app:open-settings', handler)
   }
 }
 
