@@ -144,9 +144,18 @@
       onpointerdown={startResize}
     ></div>
   {/if}
-  <!-- Header: collapse toggle, the Tracks | Fretboard picker (picking a view also expands the
-       panel), then details for the current view. -->
-  <div class="flex h-12 items-center gap-3 px-4 text-sm">
+  <!-- Header: the Tracks | Fretboard picker (picking a view also expands the panel), details for
+       the current view, and the collapse toggle. Dragging its empty space resizes the panel. -->
+  <!-- svelte-ignore a11y_no_static_element_interactions (the separator above is the accessible
+       resize handle; this just makes the whole bar a larger drag target) -->
+  <div
+    class={cn('flex h-12 items-center gap-3 px-4 text-sm', ui.tracksOpen && 'cursor-row-resize [&_button]:cursor-default')}
+    onpointerdown={(e) => {
+      // Only the bar's empty space: tabs, buttons and other controls keep their own behavior.
+      if (!ui.tracksOpen || (e.target as Element).closest('button, a, input, [role]')) return
+      startResize(e)
+    }}
+  >
     <Tabs.Root
       value={ui.tracksView}
       onValueChange={(view) => (ui.tracksView = view as typeof ui.tracksView)}
