@@ -348,7 +348,7 @@
             >
               <button
                 type="button"
-                class="track-number flex w-7 shrink-0 items-center justify-center text-[13px] font-semibold text-white tabular-nums"
+                class="track-number flex w-7 shrink-0 items-center justify-center text-[13px] font-semibold tabular-nums"
                 style:--track={track.color}
                 onclick={() => session.showOnly(track.index)}
                 aria-label="Show {label.title} in the score"
@@ -364,8 +364,8 @@
               >
                 <button
                   type="button"
-                  class="shrink-0"
-                  style:color={track.color}
+                  class="track-icon shrink-0"
+                  style:--track={track.color}
                   onclick={() => session.showOnly(track.index)}
                   tabindex={-1}
                   aria-hidden="true"
@@ -509,9 +509,15 @@
   .track-selected {
     background: color-mix(in oklab, var(--primary) 16%, var(--sidebar));
   }
+  /* Track colors from Guitar Pro files are bright pastels; mute them toward the sidebar so they
+     tint the header rather than shout. */
   .track-number {
-    background: linear-gradient(180deg, color-mix(in oklab, var(--track) 80%, white), var(--track));
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.3);
+    background: color-mix(in oklab, var(--track) 75%, var(--sidebar));
+    color: white;
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+  }
+  .track-icon {
+    color: color-mix(in oklab, var(--track) 80%, var(--muted-foreground));
   }
   .inaudible-header {
     opacity: 0.55;
