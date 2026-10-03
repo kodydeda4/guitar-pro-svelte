@@ -302,7 +302,7 @@
                   type="button"
                   class={cn(
                     'h-full shrink-0 border-r border-background hover:brightness-110',
-                    bar === currentBar - 1 && 'rounded-sm ring-2 ring-foreground ring-inset'
+                    bar === currentBar - 1 && 'rounded-sm ring-2 ring-foreground/60 ring-inset'
                   )}
                   style:width="{CELL}px"
                   style:background={active ? track.color : 'var(--muted)'}
