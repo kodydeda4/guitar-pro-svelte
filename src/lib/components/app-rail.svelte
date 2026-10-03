@@ -1,4 +1,5 @@
 <script lang="ts">
+  import GuitarIcon from '@lucide/svelte/icons/guitar'
   import LibraryIcon from '@lucide/svelte/icons/library'
   import ListMusicIcon from '@lucide/svelte/icons/list-music'
   import MoonIcon from '@lucide/svelte/icons/moon'
@@ -36,6 +37,20 @@
       icon: ListMusicIcon,
       active: ui.sidebarView === 'tracks' && !ui.settingsOpen,
       onclick: () => showSidebar('tracks')
+    },
+    {
+      label: 'Fretboard',
+      href: '#/',
+      icon: GuitarIcon,
+      active: ui.sidebarView === 'fretboard' && !ui.settingsOpen,
+      onclick: () => {
+        showSidebar('fretboard')
+        // The scale shows on the fretboard tab of the panel under the score.
+        if (ui.sidebarView === 'fretboard' && ui.sidebarOpen) {
+          ui.tracksView = 'fretboard'
+          ui.tracksOpen = true
+        }
+      }
     }
   ])
 

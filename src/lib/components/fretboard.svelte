@@ -9,6 +9,8 @@
     label?: string
     /** CSS color; defaults to the accent color. */
     color?: string
+    /** `ghost` draws a quiet translucent dot (scale tones) under the solid ones (played notes). */
+    variant?: 'solid' | 'ghost'
   }
 </script>
 
@@ -97,7 +99,10 @@
       {#each markers as marker, i (i)}
         {#if marker.string < tuning.length && marker.fret <= frets}
           <span
-            class="marker absolute flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+            class={cn(
+              'marker absolute flex items-center justify-center rounded-full text-[10px] font-bold',
+              marker.variant === 'ghost' ? 'ghost' : 'text-white'
+            )}
             style:left={noteX(marker.fret)}
             style:top="{stringY(marker.string)}%"
             style:--marker={marker.color ?? 'var(--accent-color)'}
@@ -238,5 +243,15 @@
       0 2px 6px rgb(0 0 0 / 0.45),
       inset 0 1px 0 rgb(255 255 255 / 0.35);
     text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+  }
+  /* Scale tones: translucent with a ring, smaller, under the played notes. */
+  .marker.ghost {
+    --size: min(1.25rem, calc(100cqh / var(--strings) - 6px));
+    z-index: 2;
+    background: color-mix(in oklab, var(--marker) 30%, rgb(0 0 0 / 0.35));
+    box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--marker) 85%, transparent);
+    color: color-mix(in oklab, var(--marker) 35%, white);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
+    font-size: 9px;
   }
 </style>
