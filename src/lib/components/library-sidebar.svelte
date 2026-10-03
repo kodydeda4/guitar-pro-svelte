@@ -67,7 +67,7 @@
   <DropdownMenu.Root>
     <DropdownMenu.Trigger>
       {#snippet child({ props })}
-        <Button {...props} variant="ghost" {size} aria-label="Library options">
+        <Button {...props} variant="ghost" {size} class="rounded-full" aria-label="Library options">
           <EllipsisIcon />
         </Button>
       {/snippet}
@@ -134,7 +134,13 @@
               in:fade={{ duration: 150 }}
             >
               {#if library.root}
-                <Button variant="ghost" size="icon-sm" aria-label="Search" onclick={openSearch}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  class="rounded-full"
+                  aria-label="Search"
+                  onclick={openSearch}
+                >
                   <SearchIcon />
                 </Button>
               {:else}
