@@ -146,8 +146,8 @@
               <Sidebar.MenuItem>
                 <Collapsible.Trigger>
                   {#snippet child({ props })}
-                    <Sidebar.MenuButton {...props} class="h-9">
-                      <Avatar.Root size="sm">
+                    <Sidebar.MenuButton {...props} class="h-11 text-[15px]">
+                      <Avatar.Root class="size-8">
                         <Avatar.Image
                           src={artistArtworkUrl(
                             group.artist,
@@ -156,7 +156,7 @@
                           alt=""
                           class="object-cover"
                         />
-                        <Avatar.Fallback><UserIcon class="size-3.5" /></Avatar.Fallback>
+                        <Avatar.Fallback><UserIcon class="size-4" /></Avatar.Fallback>
                       </Avatar.Root>
                       <span class="truncate">{group.artist}</span>
                       <ChevronRightIcon
@@ -165,22 +165,24 @@
                     </Sidebar.MenuButton>
                   {/snippet}
                 </Collapsible.Trigger>
-                <Sidebar.MenuBadge class="mr-6">{group.songCount}</Sidebar.MenuBadge>
+                <Sidebar.MenuBadge class="mr-6 peer-data-[size=default]/menu-button:top-3"
+                  >{group.songCount}</Sidebar.MenuBadge
+                >
                 <Collapsible.Content>
                   <Sidebar.MenuSub>
                     {#each group.albums as album (album.album)}
                       {#if album.album}
                         <li
-                          class="flex items-center gap-2 px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground"
+                          class="flex items-center gap-2.5 px-2 pt-3 pb-1 text-[13px] font-medium text-muted-foreground"
                         >
-                          <Avatar.Root class="size-8 rounded-sm after:rounded-sm">
+                          <Avatar.Root class="size-10 rounded-md after:rounded-md">
                             <Avatar.Image
                               src={albumArtworkUrl(group.artist, album.album)}
                               alt=""
-                              class="rounded-sm object-cover"
+                              class="rounded-md object-cover"
                             />
-                            <Avatar.Fallback class="rounded-sm"
-                              ><DiscIcon class="size-4" /></Avatar.Fallback
+                            <Avatar.Fallback class="rounded-md"
+                              ><DiscIcon class="size-5" /></Avatar.Fallback
                             >
                           </Avatar.Root>
                           <span class="line-clamp-2">{album.album}</span>
@@ -191,7 +193,7 @@
                           <Sidebar.MenuSubButton
                             isActive={library.selected?.id === song.id}
                             onclick={() => (library.selected = song)}
-                            class="cursor-default"
+                            class="h-8 cursor-default"
                           >
                             {#if song.trackNumber !== null}
                               <span
