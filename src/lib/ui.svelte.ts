@@ -9,6 +9,8 @@ export const ui = $state({
   inspectorTab: 'track' as 'song' | 'track',
   /** Whether the tracks panel under the score is expanded. */
   tracksOpen: true,
+  /** What the panel under the score shows: the tracks timeline or a guitar fretboard. */
+  tracksView: 'tracks' as 'tracks' | 'fretboard',
   /** Height of the expanded tracks panel's content, in px (drag its top edge to resize). */
   tracksHeight: 260
 })

@@ -1,3 +1,10 @@
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+/** Note name of a MIDI note number, without the octave: 64 → "E". */
+export function noteName(midi: number): string {
+  return NOTE_NAMES[((midi % 12) + 12) % 12]
+}
+
 /** General MIDI instrument names, by program number (0–127). */
 // prettier-ignore
 export const GM_INSTRUMENTS = [

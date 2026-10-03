@@ -6,8 +6,10 @@
   import EyeOffIcon from '@lucide/svelte/icons/eye-off'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
 
+  import Fretboard from '#lib/components/fretboard.svelte'
   import * as Kbd from '#lib/components/ui/kbd'
   import { Slider } from '#lib/components/ui/slider'
+  import * as Tabs from '#lib/components/ui/tabs'
   import { Toggle } from '#lib/components/ui/toggle'
   import * as Tooltip from '#lib/components/ui/tooltip'
   import type { ScoreInfo } from '#lib/render/types'
@@ -68,6 +70,9 @@
     const mix = session.mix[index]
     return !!mix && (anySolo ? mix.solo : !mix.muted)
   }
+  /** The fretboard shows the selected track (the first one drawn in the score). */
+  const fretboardTrack = $derived(score.tracks[session.selectedTrack])
+
   const barNumbers = $derived(
     Array.from({ length: score.barCount }, (_, i) => i + 1).filter((n) => n === 1 || n % 4 === 0)
   )
@@ -84,24 +89,54 @@
       onpointerdown={startResize}
     ></div>
   {/if}
-  <button
-    type="button"
-    class="flex h-9 w-full items-center gap-2 px-3 text-sm font-medium hover:bg-muted/50"
-    onclick={() => (ui.tracksOpen = !ui.tracksOpen)}
-    aria-expanded={ui.tracksOpen}
-  >
-    <ChevronDownIcon
-      class={cn(
-        'size-4 text-muted-foreground transition-transform',
-        !ui.tracksOpen && '-rotate-90'
-      )}
-    />
-    Tracks
-    <span class="text-xs font-normal text-muted-foreground">{score.tracks.length}</span>
+  <!-- Header: collapse toggle, then Tracks | Fretboard tabs (picking one also expands). -->
+  <div class="flex h-9 items-center gap-3 px-3 text-sm">
+    <button
+      type="button"
+      class="-ml-1 flex size-6 items-center justify-center rounded-md hover:bg-muted"
+      onclick={() => (ui.tracksOpen = !ui.tracksOpen)}
+      aria-expanded={ui.tracksOpen}
+      aria-label={ui.tracksOpen ? 'Collapse panel' : 'Expand panel'}
+    >
+      <ChevronDownIcon
+        class={cn(
+          'size-4 text-muted-foreground transition-transform',
+          !ui.tracksOpen && '-rotate-90'
+        )}
+      />
+    </button>
+    <Tabs.Root
+      value={ui.tracksView}
+      onValueChange={(view) => (ui.tracksView = view as typeof ui.tracksView)}
+    >
+      <Tabs.List variant="line" class="h-9 gap-4 p-0">
+        <Tabs.Trigger value="tracks" class="flex-none px-0" onclick={() => (ui.tracksOpen = true)}>
+          Tracks
+          <span class="text-xs font-normal text-muted-foreground">{score.tracks.length}</span>
+        </Tabs.Trigger>
+        <Tabs.Trigger
+          value="fretboard"
+          class="flex-none px-0"
+          onclick={() => (ui.tracksOpen = true)}
+        >
+          Fretboard
+        </Tabs.Trigger>
+      </Tabs.List>
+    </Tabs.Root>
     <Kbd.Root class="ml-auto">{isMac ? '⌘⇧Y' : 'Ctrl+Shift+Y'}</Kbd.Root>
-  </button>
+  </div>
 
-  {#if ui.tracksOpen}
+  {#if ui.tracksOpen && ui.tracksView === 'fretboard'}
+    <div class="border-t" style:height="{ui.tracksHeight}px">
+      {#if fretboardTrack && fretboardTrack.tuning.length > 0}
+        <Fretboard tuning={fretboardTrack.tuning} />
+      {:else}
+        <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Select a stringed track to see its fretboard.
+        </div>
+      {/if}
+    </div>
+  {:else if ui.tracksOpen}
     <!-- One scroll area; the bar numbers and sections rows stick to the top/bottom and the mixer
          column sticks to the left, so only the track rows scroll. -->
     <div
@@ -109,7 +144,11 @@
       class={cn('overflow-auto border-t text-sm', session.loading && 'pointer-events-none')}
       style:height="{ui.tracksHeight}px"
     >
-      <div class="min-w-full" style:width="{MIXER_WIDTH + score.barCount * CELL}px">
+      <!-- At least as tall as the panel, so the sections row sits at the bottom. -->
+      <div
+        class="flex min-h-full min-w-full flex-col"
+        style:width="{MIXER_WIDTH + score.barCount * CELL}px"
+      >
         <div class="sticky top-0 z-20 flex h-7 border-b bg-background">
           <div
             class="sticky left-0 z-10 shrink-0 border-r bg-background"
@@ -227,7 +266,7 @@
           </div>
         {/each}
 
-        <div class="sticky bottom-0 z-20 flex h-7 border-t bg-background text-xs">
+        <div class="sticky bottom-0 z-20 mt-auto flex h-7 shrink-0 border-t bg-background text-xs">
           <div
             class="sticky left-0 z-10 flex shrink-0 items-center border-r bg-background px-3 text-muted-foreground"
             style:width="{MIXER_WIDTH}px"
@@ -235,12 +274,18 @@
             Sections
           </div>
           <div class="relative">
-            {#each score.sections as section (section.bar)}
+            {#each score.sections as section, i (section.bar)}
+              <!-- Clipped to the space before the next section so close ones don't overlap. -->
+              {@const end = score.sections[i + 1]?.bar ?? score.barCount}
               <span
-                class="absolute top-1.5 flex items-center gap-1 whitespace-nowrap"
+                class="absolute top-1.5 flex items-center gap-1 overflow-hidden whitespace-nowrap"
                 style:left="{section.bar * CELL + 2}px"
+                style:max-width="{(end - section.bar) * CELL - 6}px"
+                title={section.name}
               >
-                <BookmarkIcon class="size-3 fill-current" />{section.name}
+                <BookmarkIcon class="size-3 shrink-0 fill-current" /><span class="truncate"
+                  >{section.name}</span
+                >
               </span>
             {/each}
           </div>

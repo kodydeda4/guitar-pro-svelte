@@ -4,9 +4,9 @@ import {
   LayoutMode,
   PlayerMode,
   Settings,
-  model,
   synth,
-  type IScrollHandler
+  type IScrollHandler,
+  type model
 } from '@coderline/alphatab'
 import bravuraWoff from '@coderline/alphatab/font/Bravura.woff?url'
 import bravuraWoff2 from '@coderline/alphatab/font/Bravura.woff2?url'
@@ -251,9 +251,7 @@ function toScoreInfo(score: model.Score): ScoreInfo {
         isStringed: staff.isStringed,
         program: track.playbackInfo.program,
         // alphaTab lists strings highest first; guitarists read tunings lowest first.
-        tuning: staff.isStringed
-          ? [...staff.tuning].reverse().map((note) => model.Tuning.getTextForTuning(note, false))
-          : [],
+        tuning: staff.isStringed ? [...staff.tuning].reverse() : [],
         tuningName: staff.isStringed ? staff.tuningName : '',
         capo: staff.capo,
         notation: {

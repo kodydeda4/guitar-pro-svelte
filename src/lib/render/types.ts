@@ -30,8 +30,8 @@ export interface TrackInfo {
   isStringed: boolean
   /** General MIDI program number (0–127). */
   program: number
-  /** Open-string note names, lowest string first ("E", "A", …); empty if not stringed. */
-  tuning: string[]
+  /** Open-string MIDI notes, lowest string first (standard guitar: 40 45 50 55 59 64); empty if not stringed. */
+  tuning: number[]
   /** Name of a known tuning ("Drop D"), or empty. */
   tuningName: string
   /** Fret the capo is on; 0 for none. */

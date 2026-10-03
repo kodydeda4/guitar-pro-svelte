@@ -8,7 +8,7 @@
   import { Slider } from '#lib/components/ui/slider'
   import { Toggle } from '#lib/components/ui/toggle'
   import * as Tooltip from '#lib/components/ui/tooltip'
-  import { GM_INSTRUMENTS } from '#lib/midi'
+  import { GM_INSTRUMENTS, noteName } from '#lib/midi'
   import type { Notation, ScoreInfo } from '#lib/render/types'
   import { session } from '#lib/session.svelte'
   import { ui } from '#lib/ui.svelte'
@@ -164,7 +164,7 @@
                 <span
                   class="flex h-8 flex-1 items-center justify-center rounded-md bg-secondary text-sm font-semibold"
                 >
-                  {note}
+                  {noteName(note)}
                 </span>
               {/each}
             </div>
