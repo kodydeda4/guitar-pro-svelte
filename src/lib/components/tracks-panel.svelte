@@ -4,17 +4,22 @@
   import EyeIcon from '@lucide/svelte/icons/eye'
   import EyeOffIcon from '@lucide/svelte/icons/eye-off'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
+  import KeyboardMusicIcon from '@lucide/svelte/icons/keyboard-music'
+  import MicVocalIcon from '@lucide/svelte/icons/mic-vocal'
+  import MusicIcon from '@lucide/svelte/icons/music'
+  import PianoIcon from '@lucide/svelte/icons/piano'
+  import type { Component } from 'svelte'
   import ListMusicIcon from '@lucide/svelte/icons/list-music'
 
   import Fretboard from '#lib/components/fretboard.svelte'
   import PanKnob from '#lib/components/pan-knob.svelte'
   import * as Kbd from '#lib/components/ui/kbd'
-  import { noteName } from '#lib/midi'
+  import { GM_INSTRUMENTS, noteName } from '#lib/midi'
   import { Slider } from '#lib/components/ui/slider'
   import * as Tabs from '#lib/components/ui/tabs'
   import { Toggle } from '#lib/components/ui/toggle'
   import * as Tooltip from '#lib/components/ui/tooltip'
-  import type { ScoreInfo } from '#lib/render/types'
+  import type { ScoreInfo, TrackInfo } from '#lib/render/types'
   import { session } from '#lib/session.svelte'
   import { ui } from '#lib/ui.svelte'
   import { cn } from '#lib/utils'
@@ -24,7 +29,7 @@
   /** Width of one bar in the timeline, in px. */
   const CELL = 20
   /** Width of the track headers column, in px. */
-  const MIXER_WIDTH = 344
+  const MIXER_WIDTH = 400
   const isMac = window.electron?.process.platform === 'darwin'
 
   let currentBar = $state(1)
@@ -81,6 +86,31 @@
   )
   /** The playhead sits at the start of the bar being played. */
   const playheadX = $derived((currentBar - 1) * CELL)
+
+  /**
+   * Guitar Pro names tracks like "Tom Keifer | Lead Vocals": show the part, with the musician
+   * underneath. Other names get the instrument underneath instead.
+   */
+  function trackLabel(track: TrackInfo): { title: string; subtitle: string } {
+    const name = track.name.trim() || `Track ${track.index + 1}`
+    const [who, ...part] = name.split('|').map((s) => s.trim())
+    if (part.length > 0 && part.join(' | ')) return { title: part.join(' | '), subtitle: who }
+    return { title: name, subtitle: instrumentName(track) }
+  }
+
+  const instrumentName = (track: TrackInfo): string =>
+    track.isPercussion ? 'Drum Kit' : (GM_INSTRUMENTS[track.program] ?? 'Instrument')
+
+  /** An icon for the track's General MIDI instrument family. */
+  function instrumentIcon(track: TrackInfo): Component {
+    const p = track.program
+    if (track.isPercussion) return DrumIcon
+    if (p <= 7) return PianoIcon
+    if (p >= 16 && p <= 23) return KeyboardMusicIcon
+    if (p >= 24 && p <= 39) return GuitarIcon
+    if (p >= 52 && p <= 54) return MicVocalIcon
+    return MusicIcon
+  }
 
   /** Runs of consecutive bars where a track plays, drawn as one region each. */
   function regions(activeBars: boolean[]): { start: number; length: number }[] {
@@ -286,39 +316,42 @@
           {@const mix = session.mix[track.index]}
           {@const visible = session.visibleTracks.includes(track.index)}
           {@const selected = track.index === session.selectedTrack}
-          <div class="group/row flex h-10 border-b border-border/50">
+          {@const Icon = instrumentIcon(track)}
+          {@const label = trackLabel(track)}
+          <div class="group/row flex h-12 shrink-0 border-b border-border/50">
             <!-- Track header -->
             <div
               class={cn(
-                'sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r bg-sidebar pr-2 pl-2',
+                'sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r bg-sidebar pr-3 pl-3',
                 selected && 'track-selected'
               )}
               style:width="{MIXER_WIDTH}px"
             >
               <button
                 type="button"
-                class="flex h-full min-w-0 flex-1 items-center gap-2.5 text-left"
+                class="flex h-full min-w-0 flex-1 items-center gap-3 text-left"
                 onclick={() => session.showOnly(track.index)}
                 title="Show this track"
               >
                 <span
-                  class="track-tile flex size-7 shrink-0 items-center justify-center rounded-md text-white"
+                  class="track-tile flex size-8 shrink-0 items-center justify-center rounded-lg text-white"
                   style:--track={track.color}
                 >
-                  {#if track.isPercussion}
-                    <DrumIcon class="size-4" />
-                  {:else}
-                    <GuitarIcon class="size-4" />
-                  {/if}
+                  <Icon class="size-[18px]" />
                 </span>
                 <span
                   class={cn(
-                    'min-w-0 flex-1 truncate text-[13px]',
-                    visible ? 'font-semibold' : 'font-medium',
-                    !audible(track.index) && 'text-muted-foreground'
+                    'flex min-w-0 flex-1 flex-col leading-tight',
+                    !audible(track.index) && 'opacity-50'
                   )}
                 >
-                  {track.name || `Track ${track.index + 1}`}
+                  <span
+                    class={cn('truncate text-[13px]', visible ? 'font-semibold' : 'font-medium')}
+                    title={track.name}
+                  >
+                    {label.title}
+                  </span>
+                  <span class="truncate text-[11px] text-muted-foreground">{label.subtitle}</span>
                 </span>
               </button>
 
@@ -357,6 +390,7 @@
                 >
                   S
                 </Toggle>
+                <span class="w-1"></span>
                 <PanKnob
                   value={mix.pan}
                   onchange={(v) => session.setPan(track.index, v)}
@@ -394,7 +428,7 @@
                   style:width="{region.length * CELL - 2}px"
                 >
                   <span class="region-header truncate px-1.5 text-[10px] leading-3.5 font-semibold">
-                    {region.length * CELL > 56 ? track.name || `Track ${track.index + 1}` : ''}
+                    {region.length * CELL > 56 ? label.title : ''}
                   </span>
                 </span>
               {/each}
