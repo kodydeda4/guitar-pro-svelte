@@ -131,6 +131,8 @@ function registerLibraryHandlers(): void {
 
   // The OS accent color (System Settings → Appearance on macOS), used as the app's accent.
   ipcMain.handle('system:accent-color', accentColor)
+  // ⌘W with no song open closes the window, as it would anywhere else.
+  ipcMain.on('window:close', (event) => BrowserWindow.fromWebContents(event.sender)?.close())
   const sendAccentColor = (): void => {
     for (const window of BrowserWindow.getAllWindows()) {
       window.webContents.send('system:accent-color-changed', accentColor())
@@ -182,12 +184,28 @@ function accentColor(): string | null {
   return /^[0-9a-f]{6}/i.test(color) ? `#${color.slice(0, 6)}` : null
 }
 
-/** Electron's standard menus, plus Settings… (⌘,), which opens the Settings sheet. */
+/**
+ * Electron's standard menus, plus Settings… (⌘,), which opens the Settings sheet, and Close Song
+ * (⌘W), which asks before closing the open song (or closes the window when none is open). The
+ * Window menu is spelled out so its own Close doesn't also claim ⌘W.
+ */
 function buildMenu(): Menu {
   const settings: Electron.MenuItemConstructorOptions = {
     label: 'Settings…',
     accelerator: 'CmdOrCtrl+,',
     click: () => BrowserWindow.getFocusedWindow()?.webContents.send('app:open-settings')
+  }
+  const closeSong: Electron.MenuItemConstructorOptions = {
+    label: 'Close Song',
+    accelerator: 'CmdOrCtrl+W',
+    click: () => BrowserWindow.getFocusedWindow()?.webContents.send('app:close-tab')
+  }
+  const windowMenu: Electron.MenuItemConstructorOptions = {
+    role: 'window',
+    submenu:
+      process.platform === 'darwin'
+        ? [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'front' }]
+        : [{ role: 'minimize' }]
   }
   const template: Electron.MenuItemConstructorOptions[] =
     process.platform === 'darwin'
@@ -208,15 +226,19 @@ function buildMenu(): Menu {
               { role: 'quit' }
             ]
           },
+          { label: 'File', submenu: [closeSong] },
           { role: 'editMenu' },
           { role: 'viewMenu' },
-          { role: 'windowMenu' }
+          windowMenu
         ]
       : [
-          { label: 'File', submenu: [settings, { type: 'separator' }, { role: 'quit' }] },
+          {
+            label: 'File',
+            submenu: [settings, closeSong, { type: 'separator' }, { role: 'quit' }]
+          },
           { role: 'editMenu' },
           { role: 'viewMenu' },
-          { role: 'windowMenu' }
+          windowMenu
         ]
   return Menu.buildFromTemplate(template)
 }

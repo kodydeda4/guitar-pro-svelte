@@ -58,9 +58,10 @@
 <!-- The welcome screen while no song is open: a fan of album covers from the library, its size,
      a shuffle button, and a few songs to start with. -->
 <div class="flex min-h-full flex-col items-center justify-center py-10">
-  <div class="relative flex flex-col items-center">
+  <!-- `isolate` keeps the glow behind this block's text instead of washing over it. -->
+  <div class="relative isolate flex flex-col items-center">
     <div
-      class="glow pointer-events-none absolute -top-16 left-1/2 size-[30rem] -translate-x-1/2"
+      class="glow pointer-events-none absolute -top-28 left-1/2 -z-10 size-[24rem] -translate-x-1/2"
     ></div>
 
     <!-- Fanned covers -->
@@ -88,14 +89,12 @@
       {/each}
     </div>
 
-    <h1 class="text-4xl font-bold tracking-tight">Pick a song</h1>
-    <p class="mt-2 text-[15px] text-muted-foreground">
+    <h1 class="title text-5xl font-extrabold tracking-tight text-foreground">Pick a song</h1>
+    <p class="mt-3 text-[15px] font-medium text-foreground/90">
       Your library is ready. Choose something from the sidebar, or let fate decide.
     </p>
 
-    <div
-      class="mt-5 flex items-center gap-2 text-xs font-medium text-muted-foreground tabular-nums"
-    >
+    <div class="mt-5 flex items-center gap-2 text-xs font-semibold text-foreground tabular-nums">
       <span class="stat">{library.songs.length.toLocaleString()} songs</span>
       <span class="stat">{artistCount.toLocaleString()} artists</span>
       <span class="stat">{albumCount.toLocaleString()} albums</span>
@@ -112,7 +111,7 @@
 
   {#if suggestions.length > 0}
     <div class="mt-14 w-full max-w-3xl">
-      <h2 class="mb-3 px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+      <h2 class="mb-3 px-1 text-xs font-bold tracking-wide text-foreground/80 uppercase">
         Try one of these
       </h2>
       <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -129,7 +128,7 @@
             )}
             <span class="min-w-0 px-0.5 leading-tight">
               <span class="block truncate text-sm font-semibold">{song.title}</span>
-              <span class="block truncate text-xs text-muted-foreground">{song.artist}</span>
+              <span class="block truncate text-xs text-foreground/75">{song.artist}</span>
             </span>
           </button>
         {/each}
@@ -143,7 +142,7 @@
   .glow {
     background: radial-gradient(
       closest-side,
-      color-mix(in oklab, var(--primary) 28%, transparent),
+      color-mix(in oklab, var(--primary) 32%, transparent),
       transparent
     );
     filter: blur(20px);
@@ -166,15 +165,25 @@
       translate 0.3s ease,
       rotate 0.3s ease;
   }
+  /* Covers lift off the glow: a crisp rim, a tight contact shadow and a deep soft one. */
   .cover :global(.art) {
     box-shadow:
-      0 0 0 1px rgb(255 255 255 / 0.08),
-      0 18px 40px rgb(0 0 0 / 0.5);
+      0 0 0 1px rgb(255 255 255 / 0.14),
+      0 3px 8px rgb(0 0 0 / 0.45),
+      0 22px 44px rgb(0 0 0 / 0.65);
+  }
+
+  /* A soft dark halo so the title reads cleanly against the glow. */
+  .title {
+    text-shadow:
+      0 1px 2px rgb(0 0 0 / 0.6),
+      0 2px 24px rgb(0 0 0 / 0.7);
   }
 
   .stat {
     border-radius: 9999px;
     padding: 0.25rem 0.75rem;
-    background: color-mix(in oklab, var(--foreground) 7%, transparent);
+    background: color-mix(in oklab, var(--foreground) 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent);
   }
 </style>

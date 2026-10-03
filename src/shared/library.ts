@@ -35,4 +35,8 @@ export interface AppApi {
   onAccentColorChange(listener: (color: string | null) => void): () => void
   /** Calls `listener` when Settings… is chosen from the app menu; returns an unsubscribe. */
   onOpenSettings(listener: () => void): () => void
+  /** Calls `listener` when Close Song (⌘W) is chosen from the app menu; returns an unsubscribe. */
+  onCloseTab(listener: () => void): () => void
+  /** Closes the app window. */
+  closeWindow(): void
 }

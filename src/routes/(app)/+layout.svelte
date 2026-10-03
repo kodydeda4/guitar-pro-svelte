@@ -3,6 +3,7 @@
   import { page } from '$app/state'
 
   import AppRail from '#lib/components/app-rail.svelte'
+  import CloseSongDialog from '#lib/components/close-song-dialog.svelte'
   import Inspector from '#lib/components/inspector.svelte'
   import InspectorEmpty from '#lib/components/inspector-empty.svelte'
   import SettingsSheet from '#lib/components/settings-sheet.svelte'
@@ -31,6 +32,7 @@
   //   ⌘⇧0  show/hide the inspector
   //   ⌘,   open Settings (a sheet); in the desktop app the menu's Settings… item handles it
   //   ⌘⇧Y  expand/collapse the tracks panel
+  //   ⌘W   close the open song, after asking (Close Song in the app menu; close-song-dialog)
   // Settings… in the app menu (src/main/index.ts).
   $effect(() => window.api?.onOpenSettings(() => (ui.settingsOpen = true)))
 
@@ -63,6 +65,7 @@
 
 <svelte:window {onkeydown} />
 <SettingsSheet />
+<CloseSongDialog />
 
 <!-- Slack-style frame: title bar across the top, rail on the left, and the library panel plus
      page content in one rounded card. -->

@@ -20,7 +20,13 @@ const api: AppApi = {
     const handler = (): void => listener()
     ipcRenderer.on('app:open-settings', handler)
     return () => ipcRenderer.removeListener('app:open-settings', handler)
-  }
+  },
+  onCloseTab: (listener) => {
+    const handler = (): void => listener()
+    ipcRenderer.on('app:close-tab', handler)
+    return () => ipcRenderer.removeListener('app:close-tab', handler)
+  },
+  closeWindow: () => ipcRenderer.send('window:close')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
