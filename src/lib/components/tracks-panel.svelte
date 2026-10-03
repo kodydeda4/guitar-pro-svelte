@@ -117,7 +117,7 @@
         // Tabs write frets relative to the capo; the fretboard shows the real position.
         const fret = n.fret + track.capo
         const midi = track.tuning[n.string] + fret
-        return { string: n.string, fret, label: label(midi) }
+        return { string: n.string, fret, label: label(midi), active: true }
       })
     if (!scale) return played
 

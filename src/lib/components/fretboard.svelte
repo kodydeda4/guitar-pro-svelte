@@ -154,7 +154,8 @@
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.08),
       inset 0 -1px 0 rgb(255 255 255 / 0.08),
-      0 6px 18px rgb(0 0 0 / 0.45);
+      0 4px 8px rgb(0 0 0 / 0.45),
+      0 14px 36px rgb(0 0 0 / 0.6);
   }
 
   /* Tight ebony grain along the neck. */
@@ -236,7 +237,8 @@
     color: color-mix(in oklab, var(--foreground) 32%, transparent);
   }
 
-  /* Sized to the string spacing so dots on neighbouring strings never overlap. */
+  /* Sized to the string spacing so dots on neighbouring strings never overlap. Frosted glass
+     tinted with the dot's color: the strings and frets blur through it. */
   .dot {
     --size: min(1.625rem, calc(100cqh / var(--strings) - 4px));
     width: var(--size);
@@ -244,28 +246,20 @@
     translate: -50% -50%;
     z-index: 3;
     border-radius: 9999px;
-    background: radial-gradient(
-      circle at 35% 30%,
-      color-mix(in oklab, var(--dot) 72%, white),
-      var(--dot) 60%
-    );
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.16), transparent 60%),
+      color-mix(in oklab, var(--dot) 60%, transparent);
+    backdrop-filter: blur(6px) saturate(1.6);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dot) 50%, rgb(255 255 255 / 0.45));
     color: var(--dot-text);
     font-size: 11px;
     font-weight: 700;
     line-height: 1;
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
-    box-shadow:
-      0 0 0 1.5px color-mix(in oklab, var(--dot) 55%, black),
-      0 2px 6px rgb(0 0 0 / 0.6),
-      inset 0 1px 0 rgb(255 255 255 / 0.3);
   }
-  /* Being played: bigger, ringed in white, glowing in its own color. */
+  /* Being played: solid and vivid, glowing softly in its own color. */
   .dot.active {
     z-index: 4;
-    scale: 1.18;
-    box-shadow:
-      0 0 0 2px var(--ebony),
-      0 0 0 3.5px white,
-      0 0 16px 5px color-mix(in oklab, var(--dot) 75%, transparent);
+    background: var(--dot);
+    box-shadow: 0 0 10px 1px color-mix(in oklab, var(--dot) 45%, transparent);
   }
 </style>
