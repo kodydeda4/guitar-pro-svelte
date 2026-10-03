@@ -1,9 +1,9 @@
 <script lang="ts">
   import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
-  import Music4Icon from '@lucide/svelte/icons/music-4'
   import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert'
   import { untrack } from 'svelte'
 
+  import PickASong from '#lib/components/pick-a-song.svelte'
   import ScoreView from '#lib/components/score-view.svelte'
   import TracksPanel from '#lib/components/tracks-panel.svelte'
   import * as Alert from '#lib/components/ui/alert'
@@ -22,7 +22,7 @@
     if (!song) return
     let cancelled = false
     songError = null
-    session.startLoading()
+    session.startLoading(song.id)
     // Start each song at the top of the score.
     untrack(() => scrollElement?.scrollTo({ top: 0 }))
     library.readSong(song).then(
@@ -64,15 +64,7 @@
       </Empty.Content>
     </Empty.Root>
   {:else if !library.selected}
-    <Empty.Root>
-      <Empty.Header>
-        <Empty.Media variant="icon"><Music4Icon /></Empty.Media>
-        <Empty.Title>Pick a song</Empty.Title>
-        <Empty.Description>
-          {library.songs.length} songs from {library.artists.length} artists. Choose one from the sidebar.
-        </Empty.Description>
-      </Empty.Header>
-    </Empty.Root>
+    <PickASong />
   {/if}
 
   {#if library.error || songError}

@@ -13,6 +13,7 @@
   import { Toggle } from '#lib/components/ui/toggle'
   import * as Tooltip from '#lib/components/ui/tooltip'
   import type { PlaybackState, ScorePlayer } from '#lib/render/types'
+  import { ui } from '#lib/ui.svelte'
   import type { Snippet } from 'svelte'
 
   let {
@@ -25,10 +26,6 @@
   } = $props()
 
   let playback = $state<PlaybackState | null>(null)
-  let speed = $state('1')
-  let looping = $state(false)
-  let metronome = $state(false)
-  let countIn = $state(false)
 
   $effect(() => {
     // No player (no song open): forget the last one's state so nothing looks playable.
@@ -40,25 +37,31 @@
   })
 
   // Push the current options to the player (and again whenever a new one appears).
-  $effect(() => player?.setSpeed(Number(speed)))
-  $effect(() => player?.setLooping(looping))
-  $effect(() => player?.setMetronome(metronome))
-  $effect(() => player?.setCountIn(countIn))
+  // Playback options are saved preferences (ui), so they survive reloads.
+  $effect(() => player?.setSpeed(Number(ui.playbackSpeed)))
+  $effect(() => player?.setLooping(ui.looping))
+  $effect(() => player?.setMetronome(ui.metronome))
+  $effect(() => player?.setCountIn(ui.countIn))
 
   const ready = $derived(playback?.ready ?? false)
   const toggles = [
-    { label: 'Loop', icon: RepeatIcon, get: () => looping, set: (v: boolean) => (looping = v) },
+    {
+      label: 'Loop',
+      icon: RepeatIcon,
+      get: () => ui.looping,
+      set: (v: boolean) => (ui.looping = v)
+    },
     {
       label: 'Metronome',
       icon: TimerIcon,
-      get: () => metronome,
-      set: (v: boolean) => (metronome = v)
+      get: () => ui.metronome,
+      set: (v: boolean) => (ui.metronome = v)
     },
     {
       label: 'Count-in',
       icon: TimerResetIcon,
-      get: () => countIn,
-      set: (v: boolean) => (countIn = v)
+      get: () => ui.countIn,
+      set: (v: boolean) => (ui.countIn = v)
     }
   ]
   const speeds = ['0.25', '0.5', '0.75', '0.9', '1', '1.25', '1.5']
@@ -126,13 +129,13 @@
 {@render children?.(playback)}
 
 <div class="toolbar-pill shrink-0 gap-0.5 px-0.5">
-  <Select.Root type="single" bind:value={speed}>
+  <Select.Root type="single" bind:value={ui.playbackSpeed}>
     <Select.Trigger
       size="sm"
       class="w-[4.5rem] rounded-full border-0 bg-transparent text-xs tabular-nums shadow-none hover:bg-muted dark:bg-transparent dark:hover:bg-muted"
       aria-label="Playback speed"
     >
-      {Math.round(Number(speed) * 100)}%
+      {Math.round(Number(ui.playbackSpeed) * 100)}%
     </Select.Trigger>
     <Select.Content>
       {#each speeds as s (s)}

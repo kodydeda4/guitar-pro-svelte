@@ -20,13 +20,20 @@ class Session {
   /** How each track is drawn, by track index. */
   notation = $state<Notation[]>([])
   loading = $state(false)
+  /** The library id of the song being shown (or loaded), for remembering its settings. */
+  songId = $state<string | null>(null)
+  /** The bar being played, 1-based. */
+  bar = $state(1)
+  /** Saved mixer settings and position, waiting for the player to be ready for them. */
+  pendingRestore: { mix: boolean; bar: number } | null = null
 
   /**
    * A new song started loading. The previous score is kept until the new one arrives so the
    * tracks panel doesn't disappear and reappear on every switch.
    */
-  startLoading(): void {
+  startLoading(songId: string): void {
     this.loading = true
+    this.songId = songId
   }
 
   loaded(score: ScoreInfo): void {
@@ -34,6 +41,15 @@ class Session {
     this.visibleTracks = [0]
     this.mix = score.tracks.map((t) => ({ muted: false, solo: false, volume: 1, pan: t.pan }))
     this.notation = score.tracks.map((t) => ({ ...t.notation }))
+    this.bar = 1
+    // Bring back how this song was left: tracks shown, mixer, notation and position.
+    const saved = this.songId ? readSongState(this.songId, score.tracks.length) : null
+    if (saved) {
+      this.visibleTracks = saved.visibleTracks
+      this.mix = saved.mix
+      this.notation = saved.notation
+    }
+    this.pendingRestore = saved ? { mix: true, bar: saved.bar } : null
     this.loading = false
   }
 
@@ -95,3 +111,75 @@ class Session {
 }
 
 export const session = new Session()
+
+/** What's remembered about each song between sessions. */
+interface SongState {
+  visibleTracks: number[]
+  mix: TrackMix[]
+  notation: Notation[]
+  bar: number
+}
+
+const songKey = (id: string): string => `song:${id}`
+
+/** A song's saved state, if it still fits the file (same number of tracks). */
+function readSongState(id: string, trackCount: number): SongState | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(songKey(id)) ?? 'null') as SongState | null
+    if (
+      !saved ||
+      !Array.isArray(saved.visibleTracks) ||
+      saved.visibleTracks.length === 0 ||
+      saved.visibleTracks.some((i) => !Number.isInteger(i) || i < 0 || i >= trackCount) ||
+      saved.mix?.length !== trackCount ||
+      saved.notation?.length !== trackCount ||
+      !Number.isInteger(saved.bar)
+    ) {
+      return null
+    }
+    return saved
+  } catch {
+    return null
+  }
+}
+
+$effect.root(() => {
+  // Save the open song's state whenever it changes.
+  $effect(() => {
+    const { songId, score, loading } = session
+    if (!songId || !score || loading) return
+    const state: SongState = {
+      visibleTracks: session.visibleTracks,
+      mix: session.mix,
+      notation: session.notation,
+      bar: session.bar
+    }
+    try {
+      localStorage.setItem(songKey(songId), JSON.stringify(state))
+    } catch {
+      // Storage unavailable: this song's settings just won't be remembered.
+    }
+  })
+
+  // Follow the playback position, and once the player is ready for a restored song, give it the
+  // saved mixer settings and move to the saved bar.
+  $effect(() => {
+    const player = session.player
+    if (!player) return
+    return player.onPlaybackChange((state) => {
+      session.bar = state.currentBar
+      const pending = session.pendingRestore
+      if (!state.ready || !pending) return
+      session.pendingRestore = null
+      if (pending.mix) {
+        session.mix.forEach((m, i) => {
+          player.setTrackMute(i, m.muted)
+          player.setTrackSolo(i, m.solo)
+          player.setTrackVolume(i, m.volume)
+          player.setTrackPan(i, m.pan)
+        })
+      }
+      if (pending.bar > 1) player.seekToBar(pending.bar - 1)
+    })
+  })
+})

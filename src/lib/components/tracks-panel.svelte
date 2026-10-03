@@ -346,6 +346,7 @@
           wood={ui.fretboardWood}
           inlays={ui.inlayShape}
           inlayColor={ui.inlayColor}
+          inlayCustom={ui.inlayCustom}
         />
       {:else}
         <div class="flex h-full items-center justify-center text-sm text-muted-foreground">

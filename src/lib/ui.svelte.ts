@@ -33,14 +33,33 @@ export const ui = $state({
   fretboardWood: 'ebony' as Wood,
   inlayShape: 'sharkfin' as InlayShape,
   inlayColor: 'pearl' as InlayColor,
+  /** The inlay color picked for `custom` inlays (a hex color). */
+  inlayCustom: '#c0392b',
   /** Strings drawn on the fretboard: the track's own (`auto`), or a 6/7/8-string neck. */
-  fretboardStrings: 'auto' as 'auto' | '6' | '7' | '8'
+  fretboardStrings: 'auto' as 'auto' | '6' | '7' | '8',
+  /** Which page the Fretboard sidebar shows: the scale picker, or Appearance (drilled into). */
+  fretboardPage: 'main' as 'main' | 'appearance',
+  /** Playback options (in the title bar). Speed is a multiplier, as a string for the picker. */
+  playbackSpeed: '1',
+  looping: false,
+  metronome: false,
+  countIn: false
 })
 
 // Preferences that survive restarts, saved in the renderer's localStorage (kept by Electron in
 // the app's data folder).
 const STORAGE_KEY = 'ui'
 const PERSISTED = [
+  'sidebarOpen',
+  'sidebarView',
+  'libraryView',
+  'inspectorOpen',
+  'inspectorTab',
+  'fretboardPage',
+  'playbackSpeed',
+  'looping',
+  'metronome',
+  'countIn',
   'tracksView',
   'tracksOpen',
   'tracksHeight',
@@ -51,6 +70,7 @@ const PERSISTED = [
   'fretboardWood',
   'inlayShape',
   'inlayColor',
+  'inlayCustom',
   'fretboardStrings'
 ] as const satisfies (keyof typeof ui)[]
 
@@ -61,12 +81,19 @@ try {
     if (typeof saved[key] === typeof ui[key]) Object.assign(ui, { [key]: saved[key] })
   }
   if (!['tracks', 'fretboard'].includes(ui.tracksView)) ui.tracksView = 'tracks'
+  if (!['library', 'tracks', 'fretboard'].includes(ui.sidebarView)) ui.sidebarView = 'library'
+  if (!['artists', 'albums', 'songs'].includes(ui.libraryView)) ui.libraryView = 'artists'
+  if (!['song', 'track'].includes(ui.inspectorTab)) ui.inspectorTab = 'track'
+  if (!['main', 'appearance'].includes(ui.fretboardPage)) ui.fretboardPage = 'main'
+  if (!['0.25', '0.5', '0.75', '0.9', '1', '1.25', '1.5'].includes(ui.playbackSpeed))
+    ui.playbackSpeed = '1'
   if (!findScale(ui.scaleId)) ui.scaleId = 'minor-pentatonic'
   if (!Number.isInteger(ui.scaleRoot) || ui.scaleRoot < 0 || ui.scaleRoot > 11) ui.scaleRoot = 9
   if (!['notes', 'intervals'].includes(ui.fretLabels)) ui.fretLabels = 'notes'
   if (!WOODS.some((w) => w.id === ui.fretboardWood)) ui.fretboardWood = 'ebony'
   if (!INLAY_SHAPES.some((s) => s.id === ui.inlayShape)) ui.inlayShape = 'sharkfin'
   if (!['auto', '6', '7', '8'].includes(ui.fretboardStrings)) ui.fretboardStrings = 'auto'
+  if (!/^#[0-9a-f]{6}$/i.test(ui.inlayCustom)) ui.inlayCustom = '#c0392b'
   if (!INLAY_COLORS.some((c) => c.id === ui.inlayColor)) ui.inlayColor = 'pearl'
 } catch {
   // No saved preferences, or storage unavailable: keep the defaults.

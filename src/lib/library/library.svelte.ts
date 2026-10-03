@@ -23,6 +23,8 @@ export class Library {
   error = $state<string | null>(null)
   query = $state('')
   selected = $state<LibrarySong | null>(null)
+  /** Whether the library has been read at least once (so `selected` reflects a real choice). */
+  ready = $state(false)
 
   readonly filtered = $derived(filterSongs(this.songs, this.query))
   readonly artists = $derived(groupByArtist(this.filtered))
@@ -57,11 +59,17 @@ export class Library {
         if (this.selected && !snapshot.songs.some((s) => s.id === this.selected?.id)) {
           this.selected = null
         }
+        // Reopen the song that was open last time (it survives reloads and restarts).
+        if (!this.selected) {
+          const id = readSavedSelection()
+          this.selected = snapshot.songs.find((s) => s.id === id) ?? null
+        }
       }
     } catch (error) {
       this.error = error instanceof Error ? error.message : String(error)
     } finally {
       this.loading = false
+      this.ready = true
     }
   }
 }
@@ -107,3 +115,28 @@ function listAlbums(artists: ArtistGroup[]): AlbumGroup[] {
 
 /** The app-wide library, shared by the sidebar and every page. */
 export const library = new Library()
+
+// The open song is remembered by id, in the renderer's localStorage.
+const SELECTED_KEY = 'library.selected'
+
+function readSavedSelection(): string | null {
+  try {
+    return localStorage.getItem(SELECTED_KEY)
+  } catch {
+    return null
+  }
+}
+
+$effect.root(() => {
+  $effect(() => {
+    const id = library.selected?.id
+    // Not read yet: keep what's saved until the library can check the song still exists.
+    if (!library.ready) return
+    try {
+      if (id) localStorage.setItem(SELECTED_KEY, id)
+      else localStorage.removeItem(SELECTED_KEY)
+    } catch {
+      // Storage unavailable: the open song just won't be remembered.
+    }
+  })
+})
