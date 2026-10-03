@@ -51,6 +51,14 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  // ⌘0 / ⌘⇧0 toggle the side panels in the UI; keep the default menu's "Actual Size" (⌘0)
+  // from swallowing them first.
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
+    mainWindow.webContents.setIgnoreMenuShortcuts(
+      (input.meta || input.control) && input.code === 'Digit0'
+    )
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }

@@ -23,12 +23,18 @@
 
   // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
   //   ⌘1   go to Library (and show the library panel)
+  //   ⌘0   show/hide the library panel
+  //   ⌘⇧0  show/hide the inspector
   //   ⌘,   open Settings
   //   ⌘⇧Y  expand/collapse the tracks panel
   function onkeydown(event: KeyboardEvent): void {
     const modifier = window.electron?.process.platform === 'darwin' ? event.metaKey : event.ctrlKey
     if (!modifier) return
-    if (event.key === '1' && !event.shiftKey && !event.altKey) {
+    if (event.code === 'Digit0' && !event.altKey) {
+      event.preventDefault()
+      if (event.shiftKey) ui.inspectorOpen = !ui.inspectorOpen
+      else ui.libraryOpen = !ui.libraryOpen
+    } else if (event.key === '1' && !event.shiftKey && !event.altKey) {
       event.preventDefault()
       ui.libraryOpen = true
       goto('#/')
