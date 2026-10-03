@@ -2,7 +2,6 @@
   import BookmarkIcon from '@lucide/svelte/icons/bookmark'
   import DrumIcon from '@lucide/svelte/icons/drum'
   import EyeIcon from '@lucide/svelte/icons/eye'
-  import EyeOffIcon from '@lucide/svelte/icons/eye-off'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
   import KeyboardMusicIcon from '@lucide/svelte/icons/keyboard-music'
   import MicVocalIcon from '@lucide/svelte/icons/mic-vocal'
@@ -17,8 +16,6 @@
   import { GM_INSTRUMENTS, noteName } from '#lib/midi'
   import { Slider } from '#lib/components/ui/slider'
   import * as Tabs from '#lib/components/ui/tabs'
-  import { Toggle } from '#lib/components/ui/toggle'
-  import * as Tooltip from '#lib/components/ui/tooltip'
   import type { ScoreInfo, TrackInfo } from '#lib/render/types'
   import { session } from '#lib/session.svelte'
   import { ui } from '#lib/ui.svelte'
@@ -29,7 +26,7 @@
   /** Width of one bar in the timeline, in px. */
   const CELL = 20
   /** Width of the track headers column, in px. */
-  const MIXER_WIDTH = 400
+  const MIXER_WIDTH = 320
   const isMac = window.electron?.process.platform === 'darwin'
 
   let currentBar = $state(1)
@@ -149,28 +146,28 @@
   {/if}
   <!-- Header: collapse toggle, the Tracks | Fretboard picker (picking a view also expands the
        panel), then details for the current view. -->
-  <div class="flex h-10 items-center gap-3 px-3 text-sm">
+  <div class="flex h-12 items-center gap-3 px-4 text-sm">
     <Tabs.Root
       value={ui.tracksView}
       onValueChange={(view) => (ui.tracksView = view as typeof ui.tracksView)}
     >
-      <Tabs.List variant="line" class="h-10 gap-5 p-0">
+      <Tabs.List variant="line" class="h-12 gap-6 p-0">
         <Tabs.Trigger
           value="tracks"
-          class="flex-none gap-1.5 px-0"
+          class="flex-none gap-2 px-0 text-[15px] [&_svg:not([class*='size-'])]:size-[18px]"
           onclick={() => (ui.tracksOpen = true)}
         >
           <ListMusicIcon />
           Tracks
           <span
-            class="rounded-full bg-muted px-1.5 text-[11px] leading-4 font-medium text-muted-foreground tabular-nums"
+            class="rounded-full bg-muted px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums"
           >
             {score.tracks.length}
           </span>
         </Tabs.Trigger>
         <Tabs.Trigger
           value="fretboard"
-          class="flex-none gap-1.5 px-0"
+          class="flex-none gap-2 px-0 text-[15px] [&_svg:not([class*='size-'])]:size-[18px]"
           onclick={() => (ui.tracksOpen = true)}
         >
           <GuitarIcon />
@@ -318,95 +315,111 @@
           {@const selected = track.index === session.selectedTrack}
           {@const Icon = instrumentIcon(track)}
           {@const label = trackLabel(track)}
-          <div class="group/row flex h-12 shrink-0 border-b border-border/50">
-            <!-- Track header -->
+          <div class="group/row flex h-16 shrink-0 border-b border-border/50">
+            <!-- Track header, GarageBand-style: number strip in the track color, instrument
+                 icon, name, then M|S, show-in-score and volume underneath, and a pan knob. -->
             <div
               class={cn(
-                'sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r bg-sidebar pr-3 pl-3',
+                'sticky left-0 z-10 flex shrink-0 border-r bg-sidebar',
                 selected && 'track-selected'
               )}
               style:width="{MIXER_WIDTH}px"
             >
               <button
                 type="button"
-                class="flex h-full min-w-0 flex-1 items-center gap-3 text-left"
+                class="track-number flex w-7 shrink-0 items-center justify-center text-[13px] font-semibold text-white tabular-nums"
+                style:--track={track.color}
                 onclick={() => session.showOnly(track.index)}
-                title="Show this track"
+                aria-label="Show {label.title} in the score"
               >
-                <span
-                  class="track-tile flex size-8 shrink-0 items-center justify-center rounded-lg text-white"
-                  style:--track={track.color}
-                >
-                  <Icon class="size-[18px]" />
-                </span>
-                <span
-                  class={cn(
-                    'flex min-w-0 flex-1 flex-col leading-tight',
-                    !audible(track.index) && 'opacity-50'
-                  )}
-                >
-                  <span
-                    class={cn('truncate text-[13px]', visible ? 'font-semibold' : 'font-medium')}
-                    title={track.name}
-                  >
-                    {label.title}
-                  </span>
-                  <span class="truncate text-[11px] text-muted-foreground">{label.subtitle}</span>
-                </span>
+                {track.index + 1}
               </button>
 
-              <Tooltip.Root>
-                <Tooltip.Trigger
-                  class={cn(
-                    'flex size-6 items-center justify-center rounded-md hover:bg-foreground/10 [&_svg]:size-3.5',
-                    visible
-                      ? 'text-foreground'
-                      : 'text-muted-foreground/70 opacity-0 group-hover/row:opacity-100'
-                  )}
-                  onclick={() => session.toggleVisible(track.index)}
-                  aria-label={visible ? 'Hide in score' : 'Show in score'}
+              <div
+                class={cn(
+                  'flex min-w-0 flex-1 items-center gap-3 pr-2.5 pl-3',
+                  !audible(track.index) && 'inaudible-header'
+                )}
+              >
+                <button
+                  type="button"
+                  class="shrink-0"
+                  style:color={track.color}
+                  onclick={() => session.showOnly(track.index)}
+                  tabindex={-1}
+                  aria-hidden="true"
                 >
-                  {#if visible}<EyeIcon />{:else}<EyeOffIcon />{/if}
-                </Tooltip.Trigger>
-                <Tooltip.Content>{visible ? 'Hide in score' : 'Show in score'}</Tooltip.Content>
-              </Tooltip.Root>
+                  <Icon class="size-8" strokeWidth={1.5} />
+                </button>
 
-              {#if mix}
-                <Toggle
-                  size="sm"
-                  class="track-button h-5 min-w-6 rounded-[5px] px-0 text-[10px] font-bold data-[state=on]:border-transparent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                  pressed={mix.muted}
-                  onPressedChange={(v) => session.setMute(track.index, v)}
-                  aria-label="Mute"
-                >
-                  M
-                </Toggle>
-                <Toggle
-                  size="sm"
-                  class="track-button h-5 min-w-6 rounded-[5px] px-0 text-[10px] font-bold data-[state=on]:border-transparent data-[state=on]:bg-amber-400 data-[state=on]:text-black"
-                  pressed={mix.solo}
-                  onPressedChange={(v) => session.setSolo(track.index, v)}
-                  aria-label="Solo"
-                >
-                  S
-                </Toggle>
-                <span class="w-1"></span>
-                <PanKnob
-                  value={mix.pan}
-                  onchange={(v) => session.setPan(track.index, v)}
-                  label="Pan"
-                />
-                <Slider
-                  type="single"
-                  class="track-volume w-16"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={Math.round(mix.volume * 100)}
-                  onValueChange={(v) => session.setVolume(track.index, v / 100)}
-                  aria-label="Volume"
-                />
-              {/if}
+                <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <button
+                    type="button"
+                    class="truncate text-left text-[13px] leading-tight font-semibold"
+                    onclick={() => session.showOnly(track.index)}
+                    title={track.name}
+                  >
+                    {label.title}<span class="font-normal text-muted-foreground"
+                      >{` | ${label.subtitle}`}</span
+                    >
+                  </button>
+
+                  {#if mix}
+                    <div class="flex items-center gap-2">
+                      <div class="segmented">
+                        <button
+                          type="button"
+                          class="mute"
+                          aria-pressed={mix.muted}
+                          onclick={() => session.setMute(track.index, !mix.muted)}
+                          title="Mute"
+                        >
+                          M
+                        </button>
+                        <button
+                          type="button"
+                          class="solo"
+                          aria-pressed={mix.solo}
+                          onclick={() => session.setSolo(track.index, !mix.solo)}
+                          title="Solo"
+                        >
+                          S
+                        </button>
+                      </div>
+                      <div class="segmented">
+                        <button
+                          type="button"
+                          class="show"
+                          aria-pressed={visible}
+                          onclick={() => session.toggleVisible(track.index)}
+                          title={visible ? 'Hide in score' : 'Show in score'}
+                        >
+                          <EyeIcon class="size-3.5" />
+                        </button>
+                      </div>
+                      <Slider
+                        type="single"
+                        class="track-volume min-w-12 flex-1"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={Math.round(mix.volume * 100)}
+                        onValueChange={(v) => session.setVolume(track.index, v / 100)}
+                        aria-label="Volume"
+                      />
+                    </div>
+                  {/if}
+                </div>
+
+                {#if mix}
+                  <PanKnob
+                    value={mix.pan}
+                    size={30}
+                    onchange={(v) => session.setPan(track.index, v)}
+                    label="Pan"
+                  />
+                {/if}
+              </div>
             </div>
 
             <!-- Lane: regions where the track plays, on a bar grid. Click to jump there. -->
@@ -475,26 +488,72 @@
   .track-selected {
     background: color-mix(in oklab, var(--primary) 16%, var(--sidebar));
   }
-  .track-tile {
-    background: linear-gradient(180deg, color-mix(in oklab, var(--track) 85%, white), var(--track));
+  .track-number {
+    background: linear-gradient(180deg, color-mix(in oklab, var(--track) 80%, white), var(--track));
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.3);
+  }
+  .inaudible-header {
+    opacity: 0.55;
+  }
+
+  /* M|S and show-in-score: small segmented keys, like GarageBand's track header buttons. */
+  .segmented {
+    display: flex;
+    height: 1.25rem;
+    overflow: hidden;
+    border-radius: 5px;
+    background: color-mix(in oklab, var(--foreground) 12%, transparent);
     box-shadow:
-      inset 0 0 0 1px rgb(0 0 0 / 0.12),
-      0 1px 2px rgb(0 0 0 / 0.25);
+      inset 0 0 0 1px rgb(0 0 0 / 0.18),
+      0 1px 0 rgb(255 255 255 / 0.04);
   }
-  /* M / S: small bordered keys, like Logic's track header buttons. */
-  :global(.track-button) {
-    border: 1px solid color-mix(in oklab, var(--foreground) 18%, transparent);
-    color: var(--muted-foreground);
+  .segmented button {
+    display: flex;
+    width: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: color-mix(in oklab, var(--foreground) 80%, transparent);
   }
-  /* A slimmer volume slider than the default. */
-  :global(.track-volume [data-slot='slider-thumb']) {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-color: transparent;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  .segmented button + button {
+    border-left: 1px solid rgb(0 0 0 / 0.25);
+  }
+  .segmented button:hover {
+    background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+  .segmented .mute[aria-pressed='true'] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .segmented .solo[aria-pressed='true'] {
+    background: #fbbf24;
+    color: #000;
+  }
+  .segmented .show[aria-pressed='true'] {
+    background: color-mix(in oklab, var(--foreground) 80%, transparent);
+    color: var(--background);
+  }
+
+  /* Volume: a recessed pill with a round knob, like GarageBand's track fader. */
+  :global(.track-volume [data-slot='slider-track'][data-orientation]) {
+    height: 1.25rem;
+    background: color-mix(in oklab, var(--foreground) 9%, transparent);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.18);
+  }
+  :global(.dark .track-volume [data-slot='slider-track'][data-orientation]) {
+    background: rgb(0 0 0 / 0.35);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.4);
   }
   :global(.track-volume [data-slot='slider-range']) {
-    background: color-mix(in oklab, var(--foreground) 55%, transparent);
+    background: color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+  :global(.track-volume [data-slot='slider-thumb']) {
+    width: 1rem;
+    height: 1rem;
+    border: none;
+    background: linear-gradient(180deg, #d4d4d8, #9b9ba3);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
   }
 
   /* Bar grid: faint lines per bar, stronger every 4 bars. */

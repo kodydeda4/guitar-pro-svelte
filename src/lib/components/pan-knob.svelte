@@ -2,19 +2,21 @@
   let {
     value,
     onchange,
-    label = 'Pan'
+    label = 'Pan',
+    size = 22
   }: {
     /** -1 (hard left) … 0 (center) … 1 (hard right). */
     value: number
     onchange: (value: number) => void
     label?: string
+    /** Diameter in px. */
+    size?: number
   } = $props()
 
   /** The knob turns 135° either way from straight up. */
   const SWEEP = 135
-  const SIZE = 22
-  const C = SIZE / 2
-  const R = 9
+  const C = $derived(size / 2)
+  const R = $derived(size / 2 - 2)
 
   const clamp = (v: number): number => Math.min(1, Math.max(-1, v))
   const point = (degrees: number, radius = R): [number, number] => {
@@ -31,7 +33,7 @@
   }
 
   const angle = $derived(clamp(value) * SWEEP)
-  const pointer = $derived(point(angle, R - 4.5))
+  const pointer = $derived(point(angle, R - size / 5))
   const text = $derived(
     Math.abs(value) < 0.02
       ? 'Center'
@@ -86,12 +88,12 @@
   ondblclick={() => onchange(0)}
   {onkeydown}
 >
-  <svg width={SIZE} height={SIZE} viewBox="0 0 {SIZE} {SIZE}" aria-hidden="true">
+  <svg width={size} height={size} viewBox="0 0 {size} {size}" aria-hidden="true">
     <path d={arc(-SWEEP, SWEEP)} class="track" />
     {#if Math.abs(angle) > 0.5}
       <path d={angle > 0 ? arc(0, angle) : arc(angle, 0)} class="level" />
     {/if}
-    <circle cx={C} cy={C} r={R - 2.5} class="body" />
+    <circle cx={C} cy={C} r={R - size / 9} class="body" />
     <line x1={C} y1={C} x2={pointer[0]} y2={pointer[1]} class="pointer" />
   </svg>
 </div>
