@@ -5,6 +5,8 @@ export interface TrackMix {
   solo: boolean
   /** 0–1, relative to the track's volume in the file. */
   volume: number
+  /** -1 (left) … 0 (center) … 1 (right). */
+  pan: number
 }
 
 /** The open song: written by the library page's score view, shown in the header and panels. */
@@ -30,7 +32,7 @@ class Session {
   loaded(score: ScoreInfo): void {
     this.score = score
     this.visibleTracks = [0]
-    this.mix = score.tracks.map(() => ({ muted: false, solo: false, volume: 1 }))
+    this.mix = score.tracks.map((t) => ({ muted: false, solo: false, volume: 1, pan: t.pan }))
     this.notation = score.tracks.map((t) => ({ ...t.notation }))
     this.loading = false
   }
@@ -84,6 +86,11 @@ class Session {
   setVolume(index: number, volume: number): void {
     this.mix[index].volume = volume
     this.player?.setTrackVolume(index, volume)
+  }
+
+  setPan(index: number, pan: number): void {
+    this.mix[index].pan = pan
+    this.player?.setTrackPan(index, pan)
   }
 }
 

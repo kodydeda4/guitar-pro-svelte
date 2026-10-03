@@ -36,6 +36,8 @@ export interface TrackInfo {
   tuningName: string
   /** Fret the capo is on; 0 for none. */
   capo: number
+  /** Pan from the file: -1 (left) … 0 (center) … 1 (right). */
+  pan: number
   /** How the track is drawn, as saved in the file. */
   notation: Notation
   /** Per bar: whether this track plays anything there. */
@@ -86,6 +88,8 @@ export interface ScorePlayer {
   setTrackSolo(index: number, solo: boolean): void
   /** 0–1, relative to the track's own volume in the file. */
   setTrackVolume(index: number, volume: number): void
+  /** -1 (left) … 0 (center) … 1 (right). */
+  setTrackPan(index: number, pan: number): void
   /** Called whenever playback state changes; returns an unsubscribe function. */
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void
 }

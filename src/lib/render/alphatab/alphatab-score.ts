@@ -25,6 +25,9 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     currentBar: 1
   }
   readonly #listeners = new Set<(state: PlaybackState) => void>()
+  /** Mixer changes made through this class, re-applied whenever the MIDI is regenerated. */
+  #mixer = new Map<number, { muted: boolean; solo: boolean; volume: number }>()
+  #panReload: ReturnType<typeof setTimeout> | undefined
 
   /** `scrollElement` is the scroll container the cursor keeps in view during playback. */
   constructor(element: HTMLElement, scrollElement: HTMLElement) {
@@ -62,6 +65,8 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
 
   load(data: Uint8Array): Promise<ScoreInfo> {
     this.#api.stop()
+    this.#mixer.clear()
+    clearTimeout(this.#panReload)
     this.#update({ ready: false, playing: false, currentTime: 0, endTime: 0, currentBar: 1 })
     return new Promise((resolve, reject) => {
       // `scoreLoaded` replays the already-loaded score as soon as a listener registers; ignore
@@ -151,15 +156,28 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   }
 
   setTrackMute(index: number, muted: boolean): void {
+    this.#mix(index).muted = muted
     this.#api.changeTrackMute(this.#tracks([index]), muted)
   }
 
   setTrackSolo(index: number, solo: boolean): void {
+    this.#mix(index).solo = solo
     this.#api.changeTrackSolo(this.#tracks([index]), solo)
   }
 
   setTrackVolume(index: number, volume: number): void {
+    this.#mix(index).volume = volume
     this.#api.changeTrackVolume(this.#tracks([index]), volume)
+  }
+
+  setTrackPan(index: number, pan: number): void {
+    const track = this.#score?.tracks[index]
+    if (!track) return
+    track.playbackInfo.balance = Math.round(Math.min(16, Math.max(0, 8 + pan * 8)))
+    // alphaTab can't change pan while playing, so the song's MIDI is regenerated with the new
+    // balance; wait for the knob to settle so dragging doesn't rebuild it constantly.
+    clearTimeout(this.#panReload)
+    this.#panReload = setTimeout(() => this.#reloadMidi(), 200)
   }
 
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void {
@@ -169,8 +187,37 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   }
 
   destroy(): void {
+    clearTimeout(this.#panReload)
     this.#listeners.clear()
     this.#api.destroy()
+  }
+
+  #mix(index: number): { muted: boolean; solo: boolean; volume: number } {
+    let mix = this.#mixer.get(index)
+    if (!mix) this.#mixer.set(index, (mix = { muted: false, solo: false, volume: 1 }))
+    return mix
+  }
+
+  /** Rebuilds the MIDI from the score (after a pan change) and carries on from the same spot. */
+  #reloadMidi(): void {
+    const tick = this.#api.tickPosition
+    const wasPlaying = this.#state.playing
+    // Like `scoreLoaded`, `midiLoaded` may replay the last load when a listener registers.
+    let started = false
+    const off = this.#api.midiLoaded.on(() => {
+      if (!started) return
+      off()
+      for (const [index, mix] of this.#mixer) {
+        const tracks = this.#tracks([index])
+        this.#api.changeTrackMute(tracks, mix.muted)
+        this.#api.changeTrackSolo(tracks, mix.solo)
+        this.#api.changeTrackVolume(tracks, mix.volume)
+      }
+      this.#api.tickPosition = tick
+      if (wasPlaying) this.#api.play()
+    })
+    started = true
+    this.#api.loadMidiForScore()
   }
 
   #tracks(indices: number[]): model.Track[] {
@@ -254,6 +301,7 @@ function toScoreInfo(score: model.Score): ScoreInfo {
         tuning: staff.isStringed ? [...staff.tuning].reverse() : [],
         tuningName: staff.isStringed ? staff.tuningName : '',
         capo: staff.capo,
+        pan: (track.playbackInfo.balance - 8) / 8,
         notation: {
           standard: staff.showStandardNotation,
           tablature: staff.isStringed && staff.showTablature,
@@ -266,7 +314,8 @@ function toScoreInfo(score: model.Score): ScoreInfo {
       }
     }),
     sections: score.masterBars.flatMap((masterBar, bar) =>
-      masterBar.section ? [{ bar, name: masterBar.section.text }] : []
+      // Some files keep the section's name in its marker ("Intro") and leave the text empty.
+      masterBar.section ? [{ bar, name: masterBar.section.text || masterBar.section.marker }] : []
     )
   }
 }
