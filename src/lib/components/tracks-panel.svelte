@@ -47,25 +47,34 @@
   })
 
   const MIN_HEIGHT = 80
+  /** Dragging this far past the minimum height collapses the panel instead. */
+  const COLLAPSE_OVERSHOOT = 40
 
   function startResize(event: PointerEvent): void {
     event.preventDefault()
-    const handle = event.currentTarget as HTMLElement
-    handle.setPointerCapture(event.pointerId)
     const startY = event.clientY
     const startHeight = ui.tracksHeight
+    // From collapsed, the panel grows out of the header bar: it opens once dragged up past the
+    // same threshold that collapses it.
+    const base = ui.tracksOpen ? startHeight : 0
     // Never let the panel take more than ~70% of the window, so the score stays visible.
     const maxHeight = Math.max(MIN_HEIGHT, window.innerHeight * 0.7)
+    // Listen on the window: the top-edge handle disappears while the panel is collapsed.
     const onMove = (e: PointerEvent): void => {
-      const next = startHeight + (startY - e.clientY)
-      ui.tracksHeight = Math.round(Math.min(maxHeight, Math.max(MIN_HEIGHT, next)))
+      const next = base + (startY - e.clientY)
+      // Clearly dragged past the bottom: collapse (dragging back up reopens it).
+      ui.tracksOpen = next >= MIN_HEIGHT - COLLAPSE_OVERSHOOT
+      if (ui.tracksOpen)
+        ui.tracksHeight = Math.round(Math.min(maxHeight, Math.max(MIN_HEIGHT, next)))
     }
     const onUp = (): void => {
-      handle.removeEventListener('pointermove', onMove)
-      handle.removeEventListener('pointerup', onUp)
+      // Ended collapsed: reopen later at the size it had before the drag.
+      if (!ui.tracksOpen) ui.tracksHeight = startHeight
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
     }
-    handle.addEventListener('pointermove', onMove)
-    handle.addEventListener('pointerup', onUp)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
   }
 
   const anySolo = $derived(session.mix.some((m) => m.solo))
@@ -145,14 +154,17 @@
     ></div>
   {/if}
   <!-- Header: the Tracks | Fretboard picker (picking a view also expands the panel), details for
-       the current view, and the collapse toggle. Dragging its empty space resizes the panel. -->
+       the current view, and the collapse toggle. Dragging its empty space resizes the panel (and opens it when collapsed). -->
   <!-- svelte-ignore a11y_no_static_element_interactions (the separator above is the accessible
        resize handle; this just makes the whole bar a larger drag target) -->
   <div
-    class={cn('flex h-12 items-center gap-3 px-4 text-sm', ui.tracksOpen && 'cursor-row-resize [&_button]:cursor-default')}
+    class={cn(
+      'flex h-12 items-center gap-3 px-4 text-sm',
+      'cursor-row-resize [&_button]:cursor-default'
+    )}
     onpointerdown={(e) => {
       // Only the bar's empty space: tabs, buttons and other controls keep their own behavior.
-      if (!ui.tracksOpen || (e.target as Element).closest('button, a, input, [role]')) return
+      if ((e.target as Element).closest('button, a, input, [role]')) return
       startResize(e)
     }}
   >
