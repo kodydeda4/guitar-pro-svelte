@@ -82,9 +82,9 @@
     {/each}
   </div>
 
-  <div class="relative ml-14 mb-2 min-h-0 flex-1">
-    <div class="board absolute inset-0 rounded-r-md" style:--strings={tuning.length}>
-      <div class="grain absolute inset-0 rounded-r-md"></div>
+  <div class="relative ml-14 mb-4 min-h-0 flex-1">
+    <div class="board absolute inset-0 rounded-r-sm" style:--strings={tuning.length}>
+      <div class="grain absolute inset-0 rounded-r-sm"></div>
 
       {#each fretNumbers as n (n)}
         {#if inlaid(n)}
@@ -136,87 +136,97 @@
 
 <style>
   .fretboard {
-    --ebony: #0b0b0c;
-    --ebony-edge: #050505;
+    --ebony: #0d0c0c;
+    --ebony-edge: #040404;
+    --binding: rgb(233 227 211 / 0.15);
   }
 
+  /* The board is radiused: lit along the middle, falling off into shadow toward both edges. */
   .board {
     container-type: size;
     background: linear-gradient(
       180deg,
       var(--ebony-edge),
-      var(--ebony) 14%,
-      #121213 50%,
-      var(--ebony) 86%,
+      var(--ebony) 12%,
+      #18171a 42%,
+      #1a191c 50%,
+      #151416 60%,
+      var(--ebony) 88%,
       var(--ebony-edge)
     );
-    /* A faint sheen along both edges, and a shadow so the neck sits on the panel. */
+    /* Cream binding on both edges (with the board's dark lip just inside it), and a deep drop
+       shadow: a tight contact shadow plus a wide, soft one so the neck floats off the panel. */
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.08),
-      inset 0 -1px 0 rgb(255 255 255 / 0.08),
-      0 4px 8px rgb(0 0 0 / 0.45),
-      0 14px 36px rgb(0 0 0 / 0.6);
+      inset 0 2px 0 var(--binding),
+      inset 0 3px 0 rgb(0 0 0 / 0.7),
+      inset 0 -2px 0 var(--binding),
+      inset 0 -3px 0 rgb(0 0 0 / 0.7),
+      0 2px 3px rgb(0 0 0 / 0.7),
+      0 10px 18px rgb(0 0 0 / 0.6),
+      0 24px 48px rgb(0 0 0 / 0.55);
   }
 
-  /* Tight ebony grain along the neck. */
+  /* Ebony grain: long streaks and pores running along the neck. */
   .grain {
-    background:
-      repeating-linear-gradient(
-        180deg,
-        transparent 0 3px,
-        rgb(255 255 255 / 0.018) 3px 4px,
-        transparent 4px 9px
-      ),
-      repeating-linear-gradient(
-        177deg,
-        transparent 0 13px,
-        rgb(255 255 255 / 0.02) 13px 14px,
-        transparent 14px 27px
-      );
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0025 0.42' numOctaves='4' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.72 0 0 0 0 0.6 0.55 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    opacity: 0.35;
+    mix-blend-mode: screen;
     pointer-events: none;
   }
 
-  /* Pearl sharkfins: a wedge rising toward the body, filling most of the fret space. */
+  /* Mother-of-pearl sharkfins: a wedge rising toward the body, with a shimmer that shifts across it. */
   .sharkfin {
-    top: 9%;
-    bottom: 9%;
+    top: 10%;
+    bottom: 10%;
     clip-path: polygon(12% 100%, 88% 0, 88% 100%);
-    background: linear-gradient(125deg, #f5f2ea, #cdd7dc 30%, #efe6f2 55%, #b7c3c8 80%, #e8efe9);
-    opacity: 0.5;
+    background:
+      radial-gradient(ellipse at 70% 75%, rgb(190 225 235 / 0.7), transparent 55%),
+      radial-gradient(ellipse at 55% 40%, rgb(235 210 240 / 0.6), transparent 50%),
+      repeating-linear-gradient(115deg, rgb(255 255 255 / 0.12) 0 2px, transparent 2px 5px),
+      linear-gradient(125deg, #f3efe6, #c9d4da 35%, #ece2ef 60%, #b4c1c7 85%, #e6ede8);
+    opacity: 0.62;
   }
 
-  /* Black graphite nut. */
+  /* Black graphite nut, slightly proud of the board. */
   .nut {
-    width: 0.5rem;
+    width: 0.55rem;
     translate: -50% 0;
     z-index: 1;
     border-radius: 2px;
-    background: linear-gradient(90deg, #1a1a1c, #3a3a3e 45%, #151517);
+    background: linear-gradient(90deg, #19191b, #3c3c40 40%, #2a2a2d 60%, #121214);
     box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.08),
-      2px 0 4px rgb(0 0 0 / 0.6);
+      inset 0 0 0 1px rgb(255 255 255 / 0.07),
+      3px 0 5px rgb(0 0 0 / 0.75);
   }
 
-  /* Jumbo stainless frets: a wide crown that catches the light. */
+  /* Jumbo stainless frets: a rounded crown lit from the left, casting a shadow onto the board,
+     and running over the binding like real fret ends. */
   .fret {
     width: 4px;
     translate: -50% 0;
-    background: linear-gradient(90deg, #5d6066, #f4f6f8 45%, #b3b7bd 70%, #55585e);
-    box-shadow: 1px 0 3px rgb(0 0 0 / 0.7);
+    border-radius: 2px;
+    background: linear-gradient(90deg, #4f5257, #fbfcfd 38%, #c4c8cd 62%, #4a4d52);
+    box-shadow:
+      2px 0 3px rgb(0 0 0 / 0.85),
+      5px 0 8px rgb(0 0 0 / 0.35);
   }
 
+  /* Strings sit above the board: lit on top, casting a soft shadow below them. */
   .string {
     translate: 0 -50%;
     z-index: 2;
     border-radius: 9999px;
-    background: linear-gradient(180deg, #f4f5f7, #a9adb3 55%, #5f636a);
-    box-shadow: 0 2px 2px rgb(0 0 0 / 0.7);
+    background: linear-gradient(180deg, #fbfcfd, #b3b7bd 45%, #6a6e75 80%, #44474c);
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 0.6),
+      0 5px 4px rgb(0 0 0 / 0.45);
   }
   /* Nickel-wound strings, the winding showing as fine diagonal ridges. */
   .string.wound {
     background:
-      repeating-linear-gradient(110deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 2.5px),
-      linear-gradient(180deg, #e6e8eb, #9a9ea5 55%, #5a5e65);
+      repeating-linear-gradient(110deg, rgb(0 0 0 / 0.35) 0 1px, transparent 1px 2.5px),
+      linear-gradient(180deg, #eef0f2, #a2a6ad 45%, #62666d 80%, #3f4247);
   }
 
   /* Notes outside the scale: a dimmed label that interrupts the string line. */
