@@ -1,4 +1,5 @@
 /** General MIDI instrument names, by program number (0–127). */
+// prettier-ignore
 export const GM_INSTRUMENTS = [
   'Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano',
   'Electric Piano 1', 'Electric Piano 2', 'Harpsichord', 'Clavinet',

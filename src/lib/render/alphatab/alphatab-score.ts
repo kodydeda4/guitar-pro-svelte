@@ -4,10 +4,9 @@ import {
   LayoutMode,
   PlayerMode,
   Settings,
+  model,
   synth,
-  Tuning,
-  type IScrollHandler,
-  type model
+  type IScrollHandler
 } from '@coderline/alphatab'
 import bravuraWoff from '@coderline/alphatab/font/Bravura.woff?url'
 import bravuraWoff2 from '@coderline/alphatab/font/Bravura.woff2?url'
@@ -224,9 +223,7 @@ class TopAwareScrollHandler implements IScrollHandler {
     const top =
       masterBar.staffSystemBounds === firstSystem
         ? 0
-        : ui.getOffset(scroll, this.#api.container).y +
-          y +
-          this.#api.settings.player.scrollOffsetY
+        : ui.getOffset(scroll, this.#api.container).y + y + this.#api.settings.player.scrollOffsetY
     ui.scrollToY(scroll, top, this.#api.settings.player.scrollSpeed)
   }
 }
@@ -255,7 +252,7 @@ function toScoreInfo(score: model.Score): ScoreInfo {
         program: track.playbackInfo.program,
         // alphaTab lists strings highest first; guitarists read tunings lowest first.
         tuning: staff.isStringed
-          ? [...staff.tuning].reverse().map((note) => Tuning.getTextForTuning(note, false))
+          ? [...staff.tuning].reverse().map((note) => model.Tuning.getTextForTuning(note, false))
           : [],
         tuningName: staff.isStringed ? staff.tuningName : '',
         capo: staff.capo,
