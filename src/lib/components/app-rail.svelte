@@ -1,5 +1,6 @@
 <script lang="ts">
   import LibraryIcon from '@lucide/svelte/icons/library'
+  import ListMusicIcon from '@lucide/svelte/icons/list-music'
   import MoonIcon from '@lucide/svelte/icons/moon'
   import SettingsIcon from '@lucide/svelte/icons/settings'
   import SunIcon from '@lucide/svelte/icons/sun'
@@ -12,18 +13,33 @@
   const itemClass =
     'group flex w-full flex-col items-center gap-1 text-[11px] font-medium text-muted-foreground'
 
+  /** Shows `view` in the sidebar; clicking the one already shown hides/shows the sidebar. */
+  function showSidebar(view: typeof ui.sidebarView): void {
+    if (ui.sidebarView === view) ui.sidebarOpen = !ui.sidebarOpen
+    else {
+      ui.sidebarView = view
+      ui.sidebarOpen = true
+    }
+  }
+
   const items = $derived([
     {
       label: 'Library',
       href: '#/',
       icon: LibraryIcon,
-      active: !ui.settingsOpen,
-      // Clicking Library while already there shows/hides the library panel.
-      onclick: () => (ui.libraryOpen = !ui.libraryOpen)
+      active: ui.sidebarView === 'library' && !ui.settingsOpen,
+      onclick: () => showSidebar('library')
+    },
+    {
+      label: 'Tracks',
+      href: '#/',
+      icon: ListMusicIcon,
+      active: ui.sidebarView === 'tracks' && !ui.settingsOpen,
+      onclick: () => showSidebar('tracks')
     },
     {
       label: 'Settings',
-      // Settings is a sheet over the library, not a page.
+      // Settings is a sheet over the app, not a page.
       href: undefined,
       icon: SettingsIcon,
       active: ui.settingsOpen,

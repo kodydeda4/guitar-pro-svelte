@@ -1,7 +1,9 @@
 /** App-wide UI state that outlives page navigation. */
 export const ui = $state({
-  /** Whether the library panel next to the rail is shown. */
-  libraryOpen: true,
+  /** Whether the sidebar next to the rail is shown. */
+  sidebarOpen: true,
+  /** What the sidebar shows, picked in the rail: the song library or the open song's tracks. */
+  sidebarView: 'library' as 'library' | 'tracks',
   /** Whether the Settings sheet is open. */
   settingsOpen: false,
   /** Which list the library panel shows. */

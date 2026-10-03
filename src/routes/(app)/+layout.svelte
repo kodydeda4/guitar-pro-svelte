@@ -7,6 +7,7 @@
   import SettingsSheet from '#lib/components/settings-sheet.svelte'
   import SongHeader from '#lib/components/song-header.svelte'
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
+  import TracksSidebar from '#lib/components/tracks-sidebar.svelte'
   import TitleBar from '#lib/components/title-bar.svelte'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { library } from '#lib/library/library.svelte'
@@ -17,14 +18,15 @@
 
   library.load()
 
-  const showLibrary = $derived(ui.libraryOpen && page.route.id === '/(app)')
+  const showSidebar = $derived(ui.sidebarOpen && page.route.id === '/(app)')
   const showInspector = $derived(
     ui.inspectorOpen && page.route.id === '/(app)' && !!library.selected && !!session.score
   )
 
   // App shortcuts (⌘ on macOS, Ctrl on Windows/Linux):
-  //   ⌘1   go to Library (and show the library panel)
-  //   ⌘0   show/hide the library panel
+  //   ⌘1   show the Library in the sidebar
+  //   ⌘2   show the open song's Tracks in the sidebar
+  //   ⌘0   show/hide the sidebar
   //   ⌘⇧0  show/hide the inspector
   //   ⌘,   open Settings (a sheet); in the desktop app the menu's Settings… item handles it
   //   ⌘⇧Y  expand/collapse the tracks panel
@@ -37,10 +39,11 @@
     if (event.code === 'Digit0' && !event.altKey) {
       event.preventDefault()
       if (event.shiftKey) ui.inspectorOpen = !ui.inspectorOpen
-      else ui.libraryOpen = !ui.libraryOpen
-    } else if (event.key === '1' && !event.shiftKey && !event.altKey) {
+      else ui.sidebarOpen = !ui.sidebarOpen
+    } else if ((event.key === '1' || event.key === '2') && !event.shiftKey && !event.altKey) {
       event.preventDefault()
-      ui.libraryOpen = true
+      ui.sidebarView = event.key === '1' ? 'library' : 'tracks'
+      ui.sidebarOpen = true
       ui.settingsOpen = false
       goto('#/')
     } else if (event.key === ',') {
@@ -59,7 +62,7 @@
 <!-- Slack-style frame: title bar across the top, rail on the left, and the library panel plus
      page content in one rounded card. -->
 <div class="flex h-svh flex-col bg-frame" style="--library-width: 20rem; --inspector-width: 18rem">
-  <TitleBar libraryShown={showLibrary} inspectorShown={showInspector}>
+  <TitleBar sidebarShown={showSidebar} inspectorShown={showInspector}>
     {#if page.route.id === '/(app)' && library.selected}
       <SongHeader song={library.selected} />
     {/if}
@@ -73,8 +76,12 @@
         class="h-full min-h-0 overflow-hidden rounded-lg border bg-background shadow-sm"
         style="--sidebar-width: var(--library-width)"
       >
-        {#if showLibrary}
-          <LibrarySidebar {library} />
+        {#if showSidebar}
+          {#if ui.sidebarView === 'tracks'}
+            <TracksSidebar />
+          {:else}
+            <LibrarySidebar {library} />
+          {/if}
         {/if}
         <div class="flex min-w-0 flex-1 flex-col">
           {@render children()}
