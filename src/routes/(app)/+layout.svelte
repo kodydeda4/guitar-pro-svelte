@@ -4,6 +4,7 @@
 
   import AppRail from '#lib/components/app-rail.svelte'
   import Inspector from '#lib/components/inspector.svelte'
+  import SongHeader from '#lib/components/song-header.svelte'
   import LibrarySidebar from '#lib/components/library-sidebar.svelte'
   import TitleBar from '#lib/components/title-bar.svelte'
   import * as Sidebar from '#lib/components/ui/sidebar'
@@ -40,8 +41,15 @@
 
 <!-- Slack-style frame: title bar across the top, rail on the left, and the library panel plus
      page content in one rounded card. -->
-<div class="flex h-svh flex-col bg-frame">
-  <TitleBar />
+<div
+  class="flex h-svh flex-col bg-frame"
+  style="--library-width: 20rem; --inspector-width: 18rem"
+>
+  <TitleBar libraryShown={showLibrary} inspectorShown={showInspector}>
+    {#if page.route.id === '/(app)' && library.selected}
+      <SongHeader song={library.selected} />
+    {/if}
+  </TitleBar>
   <div class="flex min-h-0 flex-1">
     <AppRail />
     <div class="min-w-0 flex-1 pr-2 pb-2">
@@ -49,7 +57,7 @@
            plain (non-fixed) sidebar so it can live inside the card. -->
       <Sidebar.Provider
         class="h-full min-h-0 overflow-hidden rounded-lg border bg-background shadow-sm"
-        style="--sidebar-width: 20rem"
+        style="--sidebar-width: var(--library-width)"
       >
         {#if showLibrary}
           <LibrarySidebar {library} />

@@ -58,7 +58,7 @@
 {/snippet}
 
 <!-- Guitar Pro-style inspector: details of the open song and of the selected track. -->
-<aside class="flex w-72 shrink-0 flex-col border-l bg-sidebar text-sidebar-foreground">
+<aside class="flex w-(--inspector-width) shrink-0 flex-col border-l bg-sidebar text-sidebar-foreground">
   <Tabs.Root bind:value={ui.inspectorTab} class="min-h-0 flex-1 gap-0">
     <div class="border-b p-3">
       <Tabs.List class="w-full">

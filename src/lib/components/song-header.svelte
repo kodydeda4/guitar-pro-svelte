@@ -45,10 +45,8 @@
   ])
 </script>
 
-<!-- Toolbar above the score: the open song, playback controls, and track picker. -->
-<header
-  class="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b bg-background px-4"
->
+<!-- Shown in the title bar above the score: the open song, playback controls, and track picker. -->
+<div class="grid h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-2">
   <div class="flex min-w-0 items-center">
     <div class="flex min-w-0 items-center gap-2.5">
       <!-- Re-created per image: bits-ui's Avatar never re-checks loading once one image has
@@ -123,4 +121,4 @@
       {/if}
     {/if}
   </div>
-</header>
+</div>
