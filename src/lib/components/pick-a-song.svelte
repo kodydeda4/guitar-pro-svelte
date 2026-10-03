@@ -198,7 +198,7 @@
   <!-- `isolate` keeps the glow behind this block's text instead of washing over it. -->
   <div class="relative isolate flex flex-col items-center">
     <div
-      class="glow pointer-events-none absolute -top-28 left-1/2 -z-10 size-[24rem] -translate-x-1/2"
+      class="glow pointer-events-none absolute -top-[8.5rem] left-1/2 -z-10 size-[30rem] -translate-x-1/2"
     ></div>
 
     <!-- Fanned covers: hover to lift one, swipe or drag to deal through the deck, click to find
@@ -206,7 +206,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions (the covers inside are buttons; this
          only adds swiping) -->
     <div
-      class="fan relative mb-4 h-40 w-[26rem] touch-pan-y select-none"
+      class="fan relative mb-10 h-56 w-[34rem] touch-pan-y select-none"
       {onwheel}
       {onpointerdown}
       {onpointermove}
@@ -221,7 +221,7 @@
         {@const away = lifted === null || lifted === i ? 0 : i - lifted}
         <button
           type="button"
-          class={cn('cover absolute top-0 left-1/2 size-36', lifted === i && 'hovered')}
+          class={cn('cover absolute top-0 left-1/2 size-48', lifted === i && 'hovered')}
           style:--spread={spread}
           style:--lift={Math.abs(spread)}
           style:--push="{away === 0 ? 0 : Math.sign(away) * (0.75 / Math.abs(away))}rem"
@@ -240,20 +240,13 @@
           )}
         </button>
       {:else}
-        <div class="cover absolute top-0 left-1/2 size-36" style:--spread={0}>
+        <div class="cover absolute top-0 left-1/2 size-48" style:--spread={0}>
           <div class="art flex size-full items-center justify-center rounded-xl" style:--hue={220}>
-            <Music4Icon class="size-12 text-white/70" />
+            <Music4Icon class="size-16 text-white/70" />
           </div>
         </div>
       {/each}
     </div>
-    {#if deck.length > 1}
-      <p class="mb-6 text-[11px] font-medium text-foreground/50">
-        Swipe to shuffle · Click an album to find it
-      </p>
-    {:else}
-      <div class="mb-6"></div>
-    {/if}
 
     <!-- The greeting, typed out; the full text is the accessible name from the start. -->
     <h1
@@ -333,8 +326,7 @@
 
   /* Each cover tilts and slides out from the middle, like a hand of cards. */
   .cover {
-    translate: calc(-50% + var(--spread) * 3.75rem + var(--push, 0rem))
-      calc(var(--lift, 0) * 0.5rem);
+    translate: calc(-50% + var(--spread) * 5rem + var(--push, 0rem)) calc(var(--lift, 0) * 0.65rem);
     rotate: calc(var(--spread) * 7deg);
     transform-origin: 50% 120%;
     cursor: pointer;
@@ -345,16 +337,22 @@
   }
   /* The cover under the pointer eases up a little and half-straightens. */
   .cover.hovered {
-    translate: calc(-50% + var(--spread) * 3.75rem) calc(var(--lift, 0) * 0.5rem - 0.6rem);
+    translate: calc(-50% + var(--spread) * 5rem) calc(var(--lift, 0) * 0.65rem - 0.6rem);
     rotate: calc(var(--spread) * 4deg);
     scale: 1.03;
   }
-  /* Covers lift off the glow: a crisp rim, a tight contact shadow and a deep soft one. */
+  /*
+   * Each cover gets only a crisp rim and a tight contact shadow: a big soft shadow per card would
+   * fall across the covers behind it and darken their artwork. The deep shadow is cast by the
+   * whole hand at once (.fan), onto the background.
+   */
   .cover :global(.art) {
     box-shadow:
       0 0 0 1px rgb(255 255 255 / 0.14),
-      0 3px 8px rgb(0 0 0 / 0.45),
-      0 22px 44px rgb(0 0 0 / 0.65);
+      0 1px 3px rgb(0 0 0 / 0.35);
+  }
+  .fan {
+    filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.55));
   }
 
   /* The typing caret: solid while typing, then blinking for a while before it fades away. */
