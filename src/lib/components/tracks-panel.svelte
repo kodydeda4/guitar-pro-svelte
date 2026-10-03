@@ -226,7 +226,10 @@
       class={cn('overflow-auto border-t text-sm', session.loading && 'pointer-events-none')}
       style:height="{ui.tracksHeight}px"
     >
-      <div class="relative min-w-full" style:width="{MIXER_WIDTH + timelineWidth}px">
+      <div
+        class="relative flex min-h-full min-w-full flex-col"
+        style:width="{MIXER_WIDTH + timelineWidth}px"
+      >
         <!-- Sections lane (pinned on top): each section spans up to the next one. -->
         <div class="sticky top-0 z-20 flex h-7 border-b bg-background text-[11px]">
           <div
@@ -398,6 +401,16 @@
             </button>
           </div>
         {/each}
+
+        <!-- Fills the rest of the panel, so the track headers column and the bar grid run all
+             the way down instead of ending after the last track. -->
+        <div class="flex flex-1">
+          <div
+            class="sticky left-0 z-10 shrink-0 border-r bg-sidebar"
+            style:width="{MIXER_WIDTH}px"
+          ></div>
+          <div class="lane shrink-0" style:width="{timelineWidth}px"></div>
+        </div>
 
         <!-- Playhead, under the sticky track headers so it hides behind them when scrolled. -->
         <span
