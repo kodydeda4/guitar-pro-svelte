@@ -10,13 +10,13 @@
   import type { Component } from 'svelte'
   import ListMusicIcon from '@lucide/svelte/icons/list-music'
 
-  import Fretboard from '#lib/components/fretboard.svelte'
+  import Fretboard, { type FretMarker } from '#lib/components/fretboard.svelte'
   import PanKnob from '#lib/components/pan-knob.svelte'
   import * as Kbd from '#lib/components/ui/kbd'
   import { GM_INSTRUMENTS, noteName } from '#lib/midi'
   import { Slider } from '#lib/components/ui/slider'
   import * as Tabs from '#lib/components/ui/tabs'
-  import type { ScoreInfo, TrackInfo } from '#lib/render/types'
+  import type { FrettedNote, ScoreInfo, TrackInfo } from '#lib/render/types'
   import { session } from '#lib/session.svelte'
   import { ui } from '#lib/ui.svelte'
   import { cn } from '#lib/utils'
@@ -84,6 +84,22 @@
   }
   /** The fretboard shows the selected track (the first one drawn in the score). */
   const fretboardTrack = $derived(score.tracks[session.selectedTrack])
+
+  let notes = $state<FrettedNote[]>([])
+  $effect(() => session.player?.onNotesChange((n) => (notes = n)))
+
+  /** The selected track's notes at the playback position, named by pitch. */
+  const fretboardMarkers = $derived.by((): FretMarker[] => {
+    const track = fretboardTrack
+    if (!track) return []
+    return notes
+      .filter((n) => n.track === track.index && n.string < track.tuning.length)
+      .map((n) => {
+        // Tabs write frets relative to the capo; the fretboard shows the real position.
+        const fret = n.fret + track.capo
+        return { string: n.string, fret, label: noteName(track.tuning[n.string] + fret) }
+      })
+  })
 
   const timelineWidth = $derived(score.barCount * CELL)
   /** Bar numbers at the start of each 4-bar group: 1, 5, 9… */
@@ -259,7 +275,7 @@
   {#if ui.tracksOpen && ui.tracksView === 'fretboard'}
     <div class="border-t" style:height="{ui.tracksHeight}px">
       {#if fretboardTrack && fretboardTrack.tuning.length > 0}
-        <Fretboard tuning={fretboardTrack.tuning} />
+        <Fretboard tuning={fretboardTrack.tuning} markers={fretboardMarkers} />
       {:else}
         <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
           Select a stringed track to see its fretboard.

@@ -73,6 +73,16 @@ export interface PlaybackState {
   currentBar: number
 }
 
+/** A note on a fretted instrument. */
+export interface FrettedNote {
+  /** Track index. */
+  track: number
+  /** 0 = lowest string. */
+  string: number
+  /** As written in the tab (0 = open), not counting a capo. */
+  fret: number
+}
+
 export interface ScorePlayer {
   playPause(): void
   /** Stops and rewinds to the start. */
@@ -90,6 +100,8 @@ export interface ScorePlayer {
   setTrackVolume(index: number, volume: number): void
   /** -1 (left) … 0 (center) … 1 (right). */
   setTrackPan(index: number, pan: number): void
+  /** Called whenever the notes at the playback position change; returns an unsubscribe function. */
+  onNotesChange(listener: (notes: FrettedNote[]) => void): () => void
   /** Called whenever playback state changes; returns an unsubscribe function. */
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void
 }

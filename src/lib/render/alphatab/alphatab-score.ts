@@ -11,7 +11,14 @@ import {
 import bravuraWoff from '@coderline/alphatab/font/Bravura.woff?url'
 import bravuraWoff2 from '@coderline/alphatab/font/Bravura.woff2?url'
 import soundFont from '@coderline/alphatab/soundfont/sonivox.sf2?url'
-import type { Notation, PlaybackState, ScoreInfo, ScorePlayer, ScoreRenderer } from '../types'
+import type {
+  FrettedNote,
+  Notation,
+  PlaybackState,
+  ScoreInfo,
+  ScorePlayer,
+  ScoreRenderer
+} from '../types'
 
 /** Renders and plays scores with alphaTab inside `element`. */
 export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
@@ -25,6 +32,8 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     currentBar: 1
   }
   readonly #listeners = new Set<(state: PlaybackState) => void>()
+  #notes: FrettedNote[] = []
+  readonly #noteListeners = new Set<(notes: FrettedNote[]) => void>()
   /** Mixer changes made through this class, re-applied whenever the MIDI is regenerated. */
   #mixer = new Map<number, { muted: boolean; solo: boolean; volume: number }>()
   #panReload: ReturnType<typeof setTimeout> | undefined
@@ -61,10 +70,20 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
       this.#update({ currentTime: e.currentTime, endTime: e.endTime })
     )
     this.#api.playedBeatChanged.on((beat) => this.#update({ currentBar: beat.voice.bar.index + 1 }))
+    // While paused, show what's under the cursor after it moves: clicking a beat in the score
+    // (here) or jumping to a bar (seekToBar).
+    this.#api.beatMouseDown.on((beat) => {
+      if (!this.#state.playing) this.#setNotes(fretted(beat.notes))
+    })
+    // During playback: every track's beats at the playback position (one per track and voice).
+    this.#api.activeBeatsChanged.on((e) =>
+      this.#setNotes(fretted(e.activeBeats.flatMap((beat) => beat.notes)))
+    )
   }
 
   load(data: Uint8Array): Promise<ScoreInfo> {
     this.#api.stop()
+    this.#setNotes([])
     this.#mixer.clear()
     clearTimeout(this.#panReload)
     this.#update({ ready: false, playing: false, currentTime: 0, endTime: 0, currentBar: 1 })
@@ -131,6 +150,7 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
 
   stop(): void {
     this.#api.stop()
+    this.#setNotes([])
   }
 
   setSpeed(speed: number): void {
@@ -152,7 +172,16 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   seekToBar(bar: number): void {
     const masterBar = this.#score?.masterBars[bar]
     const ticks = this.#api.tickCache
-    if (masterBar && ticks) this.#api.tickPosition = ticks.getMasterBarStart(masterBar)
+    if (!masterBar || !ticks) return
+    const tick = ticks.getMasterBarStart(masterBar)
+    this.#api.tickPosition = tick
+    if (!this.#state.playing) {
+      // Every track's beat at the start of the bar.
+      const beats = (this.#score?.tracks ?? []).flatMap(
+        (track) => ticks.findBeat(new Set([track.index]), tick)?.beat ?? []
+      )
+      this.#setNotes(fretted(beats.flatMap((beat) => beat.notes)))
+    }
   }
 
   setTrackMute(index: number, muted: boolean): void {
@@ -180,6 +209,12 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     this.#panReload = setTimeout(() => this.#reloadMidi(), 200)
   }
 
+  onNotesChange(listener: (notes: FrettedNote[]) => void): () => void {
+    this.#noteListeners.add(listener)
+    listener(this.#notes)
+    return () => this.#noteListeners.delete(listener)
+  }
+
   onPlaybackChange(listener: (state: PlaybackState) => void): () => void {
     this.#listeners.add(listener)
     listener(this.#state)
@@ -189,6 +224,7 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
   destroy(): void {
     clearTimeout(this.#panReload)
     this.#listeners.clear()
+    this.#noteListeners.clear()
     this.#api.destroy()
   }
 
@@ -225,10 +261,27 @@ export class AlphaTabScore implements ScoreRenderer, ScorePlayer {
     return indices.map((i) => all[i]).filter((t): t is model.Track => t !== undefined)
   }
 
+  #setNotes(notes: FrettedNote[]): void {
+    this.#notes = notes
+    for (const listener of this.#noteListeners) listener(notes)
+  }
+
   #update(patch: Partial<PlaybackState>): void {
     this.#state = { ...this.#state, ...patch }
     for (const listener of this.#listeners) listener(this.#state)
   }
+}
+
+/** The fretted notes among `notes` (drums and other unstringed notes have no fret). */
+function fretted(notes: model.Note[]): FrettedNote[] {
+  return notes
+    .filter((note) => note.isStringed && !note.isDead)
+    .map((note) => ({
+      track: note.beat.voice.bar.staff.track.index,
+      // alphaTab counts strings from 1 = lowest.
+      string: note.string - 1,
+      fret: note.fret
+    }))
 }
 
 type BeatBounds = Parameters<IScrollHandler['forceScrollTo']>[0]
