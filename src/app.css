@@ -37,8 +37,9 @@
 	--card-foreground: #313338;
 	--popover: #ffffff;
 	--popover-foreground: #313338;
-	/* Blurple */
-	--primary: #5865f2;
+	/* The system accent color (set from the OS by +layout.svelte), else Apple's system blue. */
+	--accent-color: var(--system-accent, #007aff);
+	--primary: var(--accent-color);
 	--primary-foreground: #ffffff;
 	--secondary: #ebedef;
 	--secondary-foreground: #313338;
@@ -49,8 +50,8 @@
 	--destructive: #da373c;
 	--border: #e1e2e4;
 	--input: #d4d7dc;
-	--ring: #5865f2;
-	--chart-1: #5865f2;
+	--ring: var(--accent-color);
+	--chart-1: var(--accent-color);
 	--chart-2: #23a55a;
 	--chart-3: #f0b232;
 	--chart-4: #eb459e;
@@ -60,12 +61,12 @@
 	/* Window background behind the rail and the content card. */
 	--frame: #e3e5e8;
 	--sidebar-foreground: #313338;
-	--sidebar-primary: #5865f2;
+	--sidebar-primary: var(--accent-color);
 	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #e0e1e5;
 	--sidebar-accent-foreground: #060607;
 	--sidebar-border: #e1e2e4;
-	--sidebar-ring: #5865f2;
+	--sidebar-ring: var(--accent-color);
 }
 
 .dark {
@@ -76,7 +77,8 @@
 	--card-foreground: #dbdee1;
 	--popover: #28282d;
 	--popover-foreground: #dbdee1;
-	--primary: #5865f2;
+	--accent-color: var(--system-accent, #0a84ff);
+	--primary: var(--accent-color);
 	--primary-foreground: #ffffff;
 	--secondary: #2b2b30;
 	--secondary-foreground: #f2f3f5;
@@ -87,8 +89,8 @@
 	--destructive: #f23f43;
 	--border: oklch(1 0 0 / 8%);
 	--input: oklch(1 0 0 / 12%);
-	--ring: #5865f2;
-	--chart-1: #5865f2;
+	--ring: var(--accent-color);
+	--chart-1: var(--accent-color);
 	--chart-2: #23a55a;
 	--chart-3: #f0b232;
 	--chart-4: #eb459e;
@@ -96,12 +98,12 @@
 	--sidebar: #121214;
 	--frame: #121214;
 	--sidebar-foreground: #dbdee1;
-	--sidebar-primary: #5865f2;
+	--sidebar-primary: var(--accent-color);
 	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #2c2c31;
 	--sidebar-accent-foreground: #f2f3f5;
 	--sidebar-border: oklch(1 0 0 / 8%);
-	--sidebar-ring: #5865f2;
+	--sidebar-ring: var(--accent-color);
 }
 
 /* Glass frame on platforms with a native blur material behind the window (set in
@@ -178,12 +180,12 @@
 }
 .at-cursor-beat {
 	width: 3px;
-	background: rgb(88 101 242 / 0.85);
+	background: color-mix(in srgb, var(--accent-color) 85%, transparent);
 }
 .at-selection div {
-	background: rgb(88 101 242 / 0.12);
+	background: color-mix(in srgb, var(--accent-color) 12%, transparent);
 }
 .at-highlight * {
-	fill: rgb(88 101 242);
-	stroke: rgb(88 101 242);
+	fill: var(--accent-color);
+	stroke: var(--accent-color);
 }

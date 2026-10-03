@@ -1,4 +1,12 @@
-import { app, shell, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  systemPreferences
+} from 'electron'
 import { readFile } from 'fs/promises'
 import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -106,6 +114,22 @@ function registerLibraryHandlers(): void {
     if (['light', 'dark', 'system'].includes(theme)) nativeTheme.themeSource = theme
   })
 
+  // The OS accent color (System Settings → Appearance on macOS), used as the app's accent.
+  ipcMain.handle('system:accent-color', accentColor)
+  const sendAccentColor = (): void => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send('system:accent-color-changed', accentColor())
+    }
+  }
+  if (process.platform === 'darwin') {
+    systemPreferences.subscribeNotification(
+      'AppleColorPreferencesChangedNotification',
+      sendAccentColor
+    )
+  } else if (process.platform === 'win32') {
+    systemPreferences.on('accent-color-changed', sendAccentColor)
+  }
+
   ipcMain.handle('library:get', async () => snapshot((await loadSettings()).libraryRoot))
 
   ipcMain.handle('library:choose-folder', async (event) => {
@@ -133,4 +157,12 @@ function registerLibraryHandlers(): void {
     }
     return new Uint8Array(await readFile(path))
   })
+}
+
+/** The OS accent color as "#rrggbb", or null where Electron can't read one. */
+function accentColor(): string | null {
+  if (process.platform !== 'darwin' && process.platform !== 'win32') return null
+  // Returned as RRGGBBAA.
+  const color = systemPreferences.getAccentColor()
+  return /^[0-9a-f]{6}/i.test(color) ? `#${color.slice(0, 6)}` : null
 }

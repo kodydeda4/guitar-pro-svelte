@@ -12,6 +12,18 @@
 
   // Keep the native glass behind the frame in the same light/dark mode as the app.
   $effect(() => window.api?.setTheme(userPrefersMode.current))
+
+  // Use the OS accent color for the app's accent (app.css falls back to Apple's system blue).
+  $effect(() => {
+    const api = window.api
+    if (!api) return
+    const apply = (color: string | null): void => {
+      if (color) document.documentElement.style.setProperty('--system-accent', color)
+      else document.documentElement.style.removeProperty('--system-accent')
+    }
+    api.getAccentColor().then(apply)
+    return api.onAccentColorChange(apply)
+  })
 </script>
 
 <ModeWatcher />

@@ -9,7 +9,13 @@ const api: AppApi = {
     chooseFolder: () => ipcRenderer.invoke('library:choose-folder'),
     readSong: (path) => ipcRenderer.invoke('library:read-song', path)
   },
-  setTheme: (theme) => ipcRenderer.send('theme:set', theme)
+  setTheme: (theme) => ipcRenderer.send('theme:set', theme),
+  getAccentColor: () => ipcRenderer.invoke('system:accent-color'),
+  onAccentColorChange: (listener) => {
+    const handler = (_event: unknown, color: string | null): void => listener(color)
+    ipcRenderer.on('system:accent-color-changed', handler)
+    return () => ipcRenderer.removeListener('system:accent-color-changed', handler)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

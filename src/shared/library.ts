@@ -29,4 +29,8 @@ export interface AppApi {
   }
   /** Makes the window's native parts (the glass behind the rail) follow the app's theme. */
   setTheme(theme: 'light' | 'dark' | 'system'): void
+  /** The OS accent color as "#rrggbb", or null where there isn't one (Linux). */
+  getAccentColor(): Promise<string | null>
+  /** Calls `listener` whenever the user changes the OS accent color; returns an unsubscribe. */
+  onAccentColorChange(listener: (color: string | null) => void): () => void
 }
