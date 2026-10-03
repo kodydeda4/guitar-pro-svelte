@@ -6,6 +6,7 @@
   import SunIcon from '@lucide/svelte/icons/sun'
   import { setMode, userPrefersMode } from 'mode-watcher'
 
+  import FretLabelsToggle from '#lib/components/fret-labels-toggle.svelte'
   import { Button } from '#lib/components/ui/button'
   import * as Dialog from '#lib/components/ui/dialog'
   import * as ToggleGroup from '#lib/components/ui/toggle-group'
@@ -86,6 +87,21 @@
               <ToggleGroup.Item value="dark"><MoonIcon /> Dark</ToggleGroup.Item>
               <ToggleGroup.Item value="system"><MonitorIcon /> System</ToggleGroup.Item>
             </ToggleGroup.Root>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        {@render section('Fretboard')}
+        <div class="rounded-lg border bg-muted/30">
+          <div class="flex items-center justify-between gap-4 px-4 py-2.5">
+            <div class="min-w-0">
+              <span class="font-medium">Show notes as</span>
+              <p class="text-xs text-muted-foreground">
+                Intervals are counted from the root of the scale picked in Fretboard.
+              </p>
+            </div>
+            <FretLabelsToggle class="shrink-0" />
           </div>
         </div>
       </section>

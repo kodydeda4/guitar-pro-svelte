@@ -91,11 +91,8 @@
 
   /** Frets drawn on the fretboard (its default). */
   const FRETS = 24
-  /** Colors of the scale overlay: its root, and the other scale tones. */
-  const ROOT_COLOR = '#f59e0b'
-  const TONE_COLOR = '#94a3b8'
-  /** Played notes outside the scale. */
-  const OUTSIDE_COLOR = '#ef4444'
+  /** Scale tones that aren't being played (played notes use the accent color). */
+  const IDLE_COLOR = '#94a3b8'
 
   const scale = $derived(ui.scaleShown ? findScale(ui.scaleId) : undefined)
   /** Pitch classes in the scale (0 = C). */
@@ -103,7 +100,7 @@
 
   /**
    * The selected scale on every string and fret (quiet dots), with the selected track's notes at
-   * the playback position on top: accent when they're in the scale, red when they aren't.
+   * the playback position on top in the accent color.
    */
   const fretboardMarkers = $derived.by((): FretMarker[] => {
     const track = fretboardTrack
@@ -120,13 +117,7 @@
         // Tabs write frets relative to the capo; the fretboard shows the real position.
         const fret = n.fret + track.capo
         const midi = track.tuning[n.string] + fret
-        const outside = !!scale && !scaleTones.has(pitchClass(midi))
-        return {
-          string: n.string,
-          fret,
-          label: label(midi),
-          color: outside ? OUTSIDE_COLOR : undefined
-        }
+        return { string: n.string, fret, label: label(midi) }
       })
     if (!scale) return played
 
@@ -136,13 +127,11 @@
       for (let fret = 0; fret <= FRETS; fret++) {
         const midi = open + fret
         if (!scaleTones.has(pitchClass(midi)) || taken.has(`${string}:${fret}`)) continue
-        const root = pitchClass(midi) === ui.scaleRoot
         tones.push({
           string,
           fret,
           label: label(midi),
-          color: root ? ROOT_COLOR : TONE_COLOR,
-          variant: 'ghost'
+          color: IDLE_COLOR
         })
       }
     })

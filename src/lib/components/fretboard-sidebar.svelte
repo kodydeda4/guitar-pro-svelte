@@ -2,6 +2,7 @@
   import CheckIcon from '@lucide/svelte/icons/check'
   import PanelBottomIcon from '@lucide/svelte/icons/panel-bottom'
 
+  import FretLabelsToggle from '#lib/components/fret-labels-toggle.svelte'
   import * as Sidebar from '#lib/components/ui/sidebar'
   import { Switch } from '#lib/components/ui/switch'
   import { noteName } from '#lib/midi'
@@ -26,14 +27,12 @@
   <h3 class="mb-2 px-1 text-xs font-semibold text-muted-foreground">{text}</h3>
 {/snippet}
 
-{#snippet dot(kind: 'root' | 'tone' | 'in' | 'out')}
+{#snippet dot(kind: 'idle' | 'playing')}
   <span
     class={cn(
       'size-3 shrink-0 rounded-full',
-      kind === 'root' && 'bg-[#f59e0b]/30 ring-[1.5px] ring-[#f59e0b] ring-inset',
-      kind === 'tone' && 'bg-[#94a3b8]/30 ring-[1.5px] ring-[#94a3b8] ring-inset',
-      kind === 'in' && 'bg-primary',
-      kind === 'out' && 'bg-[#ef4444]'
+      kind === 'idle' && 'bg-[#94a3b8]',
+      kind === 'playing' && 'bg-primary'
     )}
   ></span>
 {/snippet}
@@ -67,6 +66,16 @@
         Show the fretboard panel
       </button>
     {/if}
+
+    <section class="px-3 pb-4">
+      {@render heading('Show notes as')}
+      <FretLabelsToggle />
+      {#if ui.fretLabels === 'intervals' && !ui.scaleShown}
+        <p class="mt-1.5 px-1 text-[11px] text-muted-foreground">
+          Intervals are counted from the scale's root, so turn the scale on to see them.
+        </p>
+      {/if}
+    </section>
 
     <div class={cn('flex flex-col gap-5 px-3 pb-6', !ui.scaleShown && 'opacity-50')}>
       <section>
@@ -147,33 +156,10 @@
       {/if}
 
       <section>
-        {@render heading('Labels')}
-        <div class="grid grid-cols-2 gap-1 rounded-lg bg-foreground/6 p-0.5">
-          {#each [{ value: 'notes', label: 'Note names' }, { value: 'intervals', label: 'Intervals' }] as const as option (option.value)}
-            <button
-              type="button"
-              class={cn(
-                'h-7 rounded-md text-[13px] font-medium transition-colors',
-                ui.fretLabels === option.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-pressed={ui.fretLabels === option.value}
-              onclick={() => (ui.fretLabels = option.value)}
-            >
-              {option.label}
-            </button>
-          {/each}
-        </div>
-      </section>
-
-      <section>
         {@render heading('Legend')}
         <ul class="flex flex-col gap-1.5 px-1 text-[13px] text-muted-foreground">
-          <li class="flex items-center gap-2">{@render dot('root')} Root</li>
-          <li class="flex items-center gap-2">{@render dot('tone')} Scale tone</li>
-          <li class="flex items-center gap-2">{@render dot('in')} Playing, in the scale</li>
-          <li class="flex items-center gap-2">{@render dot('out')} Playing, outside the scale</li>
+          <li class="flex items-center gap-2">{@render dot('idle')} Scale tone</li>
+          <li class="flex items-center gap-2">{@render dot('playing')} Playing</li>
         </ul>
       </section>
     </div>
