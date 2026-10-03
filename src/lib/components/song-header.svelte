@@ -16,6 +16,10 @@
 
   let { song }: { song: LibrarySong } = $props()
 
+  const artworkUrl = $derived(
+    song.album ? albumArtworkUrl(song.artist, song.album) : artistArtworkUrl(song.artist)
+  )
+
   // While the next song loads, session.score still holds the previous one.
   const score = $derived(session.loading ? null : session.score)
   const trackLabel = $derived(
@@ -47,16 +51,14 @@
 >
   <div class="flex min-w-0 items-center">
     <div class="flex min-w-0 items-center gap-2.5">
-      <Avatar.Root class="size-8 rounded-sm after:rounded-sm">
-        <Avatar.Image
-          src={song.album
-            ? albumArtworkUrl(song.artist, song.album)
-            : artistArtworkUrl(song.artist)}
-          alt=""
-          class="rounded-sm object-cover"
-        />
-        <Avatar.Fallback class="rounded-sm"><Music4Icon class="size-4" /></Avatar.Fallback>
-      </Avatar.Root>
+      <!-- Re-created per image: bits-ui's Avatar never re-checks loading once one image has
+           loaded, so a missing cover would otherwise show as a broken image. -->
+      {#key artworkUrl}
+        <Avatar.Root class="size-8 rounded-sm after:rounded-sm">
+          <Avatar.Image src={artworkUrl} alt="" class="rounded-sm object-cover" />
+          <Avatar.Fallback class="rounded-sm"><Music4Icon class="size-4" /></Avatar.Fallback>
+        </Avatar.Root>
+      {/key}
       <div class="min-w-0 leading-tight">
         <div class="truncate text-sm font-semibold">{score?.title || song.title}</div>
         <div class="truncate text-xs text-muted-foreground">
