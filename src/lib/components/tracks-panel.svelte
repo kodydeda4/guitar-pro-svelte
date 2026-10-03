@@ -1,13 +1,14 @@
 <script lang="ts">
   import BookmarkIcon from '@lucide/svelte/icons/bookmark'
-  import ChevronDownIcon from '@lucide/svelte/icons/chevron-down'
   import DrumIcon from '@lucide/svelte/icons/drum'
   import EyeIcon from '@lucide/svelte/icons/eye'
   import EyeOffIcon from '@lucide/svelte/icons/eye-off'
   import GuitarIcon from '@lucide/svelte/icons/guitar'
+  import ListMusicIcon from '@lucide/svelte/icons/list-music'
 
   import Fretboard from '#lib/components/fretboard.svelte'
   import * as Kbd from '#lib/components/ui/kbd'
+  import { noteName } from '#lib/midi'
   import { Slider } from '#lib/components/ui/slider'
   import * as Tabs from '#lib/components/ui/tabs'
   import { Toggle } from '#lib/components/ui/toggle'
@@ -89,41 +90,95 @@
       onpointerdown={startResize}
     ></div>
   {/if}
-  <!-- Header: collapse toggle, then Tracks | Fretboard tabs (picking one also expands). -->
-  <div class="flex h-9 items-center gap-3 px-3 text-sm">
-    <button
-      type="button"
-      class="-ml-1 flex size-6 items-center justify-center rounded-md hover:bg-muted"
-      onclick={() => (ui.tracksOpen = !ui.tracksOpen)}
-      aria-expanded={ui.tracksOpen}
-      aria-label={ui.tracksOpen ? 'Collapse panel' : 'Expand panel'}
-    >
-      <ChevronDownIcon
-        class={cn(
-          'size-4 text-muted-foreground transition-transform',
-          !ui.tracksOpen && '-rotate-90'
-        )}
-      />
-    </button>
+  <!-- Header: collapse toggle, the Tracks | Fretboard picker (picking a view also expands the
+       panel), then details for the current view. -->
+  <div class="flex h-10 items-center gap-3 px-3 text-sm">
     <Tabs.Root
       value={ui.tracksView}
       onValueChange={(view) => (ui.tracksView = view as typeof ui.tracksView)}
     >
-      <Tabs.List variant="line" class="h-9 gap-4 p-0">
-        <Tabs.Trigger value="tracks" class="flex-none px-0" onclick={() => (ui.tracksOpen = true)}>
+      <Tabs.List variant="line" class="h-10 gap-5 p-0">
+        <Tabs.Trigger
+          value="tracks"
+          class="flex-none gap-1.5 px-0"
+          onclick={() => (ui.tracksOpen = true)}
+        >
+          <ListMusicIcon />
           Tracks
-          <span class="text-xs font-normal text-muted-foreground">{score.tracks.length}</span>
+          <span
+            class="rounded-full bg-muted px-1.5 text-[11px] leading-4 font-medium text-muted-foreground tabular-nums"
+          >
+            {score.tracks.length}
+          </span>
         </Tabs.Trigger>
         <Tabs.Trigger
           value="fretboard"
-          class="flex-none px-0"
+          class="flex-none gap-1.5 px-0"
           onclick={() => (ui.tracksOpen = true)}
         >
+          <GuitarIcon />
           Fretboard
         </Tabs.Trigger>
       </Tabs.List>
     </Tabs.Root>
-    <Kbd.Root class="ml-auto">{isMac ? '⌘⇧Y' : 'Ctrl+Shift+Y'}</Kbd.Root>
+
+    <!-- Details for the current view. -->
+    <div class="ml-auto flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
+      {#if ui.tracksView === 'tracks'}
+        <span class="flex items-center gap-1.5 whitespace-nowrap">
+          <EyeIcon class="size-3.5" />
+          {session.visibleTracks.length} of {score.tracks.length} shown
+        </span>
+        <span class="flex items-center gap-1.5 whitespace-nowrap tabular-nums">
+          <BookmarkIcon class="size-3.5" />
+          {score.sections.length}
+          {score.sections.length === 1 ? 'section' : 'sections'}
+        </span>
+      {:else if fretboardTrack}
+        <span class="flex min-w-0 items-center gap-1.5">
+          <span class="size-2 shrink-0 rounded-full" style:background={fretboardTrack.color}></span>
+          <span class="truncate font-medium text-foreground">
+            {fretboardTrack.name || `Track ${fretboardTrack.index + 1}`}
+          </span>
+        </span>
+        {#if fretboardTrack.tuning.length > 0}
+          <span class="whitespace-nowrap">
+            {fretboardTrack.tuningName ||
+              fretboardTrack.tuning.map((note) => noteName(note)).join(' ')}
+            · {fretboardTrack.tuning.length} strings{fretboardTrack.capo > 0
+              ? ` · Capo ${fretboardTrack.capo}`
+              : ''}
+          </span>
+        {/if}
+      {/if}
+      <Kbd.Root>{isMac ? '⌘⇧Y' : 'Ctrl+Shift+Y'}</Kbd.Root>
+    </div>
+
+    <!-- Show/hide the panel's content: accent-colored while open, gray while collapsed. -->
+    <button
+      type="button"
+      class={cn(
+        '-mr-1 flex size-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-muted',
+        ui.tracksOpen ? 'text-primary' : 'text-muted-foreground'
+      )}
+      onclick={() => (ui.tracksOpen = !ui.tracksOpen)}
+      aria-expanded={ui.tracksOpen}
+      aria-label={ui.tracksOpen ? 'Collapse panel' : 'Expand panel'}
+    >
+      <svg viewBox="0 0 20 20" class="size-[18px]" aria-hidden="true">
+        <rect
+          x="2.75"
+          y="3.75"
+          width="14.5"
+          height="12.5"
+          rx="2.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+        <rect x="5" y="10.5" width="10" height="3.5" rx="1" fill="currentColor" />
+      </svg>
+    </button>
   </div>
 
   {#if ui.tracksOpen && ui.tracksView === 'fretboard'}
@@ -144,11 +199,7 @@
       class={cn('overflow-auto border-t text-sm', session.loading && 'pointer-events-none')}
       style:height="{ui.tracksHeight}px"
     >
-      <!-- At least as tall as the panel, so the sections row sits at the bottom. -->
-      <div
-        class="flex min-h-full min-w-full flex-col"
-        style:width="{MIXER_WIDTH + score.barCount * CELL}px"
-      >
+      <div class="min-w-full" style:width="{MIXER_WIDTH + score.barCount * CELL}px">
         <div class="sticky top-0 z-20 flex h-7 border-b bg-background">
           <div
             class="sticky left-0 z-10 shrink-0 border-r bg-background"
@@ -266,7 +317,7 @@
           </div>
         {/each}
 
-        <div class="sticky bottom-0 z-20 mt-auto flex h-7 shrink-0 border-t bg-background text-xs">
+        <div class="sticky bottom-0 z-20 flex h-7 border-t bg-background text-xs">
           <div
             class="sticky left-0 z-10 flex shrink-0 items-center border-r bg-background px-3 text-muted-foreground"
             style:width="{MIXER_WIDTH}px"
