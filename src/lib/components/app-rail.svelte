@@ -36,46 +36,52 @@
       icon: ListMusicIcon,
       active: ui.sidebarView === 'tracks' && !ui.settingsOpen,
       onclick: () => showSidebar('tracks')
-    },
-    {
-      label: 'Settings',
-      // Settings is a sheet over the app, not a page.
-      href: undefined,
-      icon: SettingsIcon,
-      active: ui.settingsOpen,
-      onclick: () => (ui.settingsOpen = true)
     }
   ])
+
+  /** Pinned to the very bottom of the rail, under the theme toggle. */
+  const settings = $derived({
+    label: 'Settings',
+    // Settings is a sheet over the app, not a page.
+    href: undefined,
+    icon: SettingsIcon,
+    active: ui.settingsOpen,
+    onclick: () => (ui.settingsOpen = true)
+  })
 </script>
+
+{#snippet railItem(item: (typeof items)[number] | typeof settings)}
+  {#snippet content()}
+    <span
+      class={cn(
+        'flex size-9 items-center justify-center rounded-lg transition-colors group-hover:bg-foreground/10 [&_svg]:size-5',
+        item.active && 'bg-foreground/15 text-foreground'
+      )}
+    >
+      <item.icon />
+    </span>
+    <span class={item.active ? 'text-foreground' : ''}>{item.label}</span>
+  {/snippet}
+  {#if item.href}
+    <a
+      href={item.href}
+      onclick={item.onclick}
+      class={itemClass}
+      aria-current={item.active ? 'page' : undefined}
+    >
+      {@render content()}
+    </a>
+  {:else}
+    <button type="button" onclick={item.onclick} class={itemClass} aria-pressed={item.active}>
+      {@render content()}
+    </button>
+  {/if}
+{/snippet}
 
 <!-- Slack-style navigation rail: icon buttons with labels underneath. -->
 <nav class="flex w-[4.5rem] shrink-0 flex-col items-center gap-3 pt-1 pb-3">
   {#each items as item (item.label)}
-    {#snippet content()}
-      <span
-        class={cn(
-          'flex size-9 items-center justify-center rounded-lg transition-colors group-hover:bg-foreground/10 [&_svg]:size-5',
-          item.active && 'bg-foreground/15 text-foreground'
-        )}
-      >
-        <item.icon />
-      </span>
-      <span class={item.active ? 'text-foreground' : ''}>{item.label}</span>
-    {/snippet}
-    {#if item.href}
-      <a
-        href={item.href}
-        onclick={item.onclick}
-        class={itemClass}
-        aria-current={item.active ? 'page' : undefined}
-      >
-        {@render content()}
-      </a>
-    {:else}
-      <button type="button" onclick={item.onclick} class={itemClass} aria-pressed={item.active}>
-        {@render content()}
-      </button>
-    {/if}
+    {@render railItem(item)}
   {/each}
 
   <div class="flex-1"></div>
@@ -92,4 +98,6 @@
       >{mode.current === 'dark' ? 'Light mode' : 'Dark mode'}</Tooltip.Content
     >
   </Tooltip.Root>
+
+  {@render railItem(settings)}
 </nav>
