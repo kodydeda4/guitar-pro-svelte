@@ -220,15 +220,41 @@
     </div>
   {:else if ui.tracksOpen}
     <!-- Logic/GarageBand-style arrangement: track headers on the left (sticky), regions where
-         each track plays, a ruler and a sections lane (sticky top/bottom), and a playhead. -->
+         each track plays, a sections lane and a ruler (both sticky on top), and a playhead. -->
     <div
       bind:this={timeline}
       class={cn('overflow-auto border-t text-sm', session.loading && 'pointer-events-none')}
       style:height="{ui.tracksHeight}px"
     >
       <div class="relative min-w-full" style:width="{MIXER_WIDTH + timelineWidth}px">
+        <!-- Sections lane (pinned on top): each section spans up to the next one. -->
+        <div class="sticky top-0 z-20 flex h-7 border-b bg-background text-[11px]">
+          <div
+            class="sticky left-0 z-10 flex shrink-0 items-center border-r bg-sidebar px-3 font-medium text-muted-foreground"
+            style:width="{MIXER_WIDTH}px"
+          >
+            Sections
+          </div>
+          <div class="relative shrink-0" style:width="{timelineWidth}px">
+            {#each score.sections as section, i (section.bar)}
+              {@const end = score.sections[i + 1]?.bar ?? score.barCount}
+              <button
+                type="button"
+                class="section absolute inset-y-1 flex cursor-default items-center gap-1 overflow-hidden rounded-[5px] px-1.5 font-medium"
+                style:left="{section.bar * CELL + 1}px"
+                style:width="{(end - section.bar) * CELL - 2}px"
+                title={section.name}
+                onclick={() => session.player?.seekToBar(section.bar)}
+              >
+                <BookmarkIcon class="size-3 shrink-0 fill-current opacity-60" />
+                <span class="truncate">{section.name}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+
         <!-- Ruler: click to move the playhead. -->
-        <div class="sticky top-0 z-20 flex h-7 border-b bg-background">
+        <div class="sticky top-7 z-20 flex h-7 border-b bg-background">
           <div
             class="sticky left-0 z-10 flex shrink-0 items-center border-r bg-sidebar px-3 text-[11px] font-medium text-muted-foreground"
             style:width="{MIXER_WIDTH}px"
@@ -373,35 +399,9 @@
           </div>
         {/each}
 
-        <!-- Sections lane: each section spans up to the next one. -->
-        <div class="sticky bottom-0 z-20 flex h-7 border-t bg-background text-[11px]">
-          <div
-            class="sticky left-0 z-10 flex shrink-0 items-center border-r bg-sidebar px-3 font-medium text-muted-foreground"
-            style:width="{MIXER_WIDTH}px"
-          >
-            Sections
-          </div>
-          <div class="relative shrink-0" style:width="{timelineWidth}px">
-            {#each score.sections as section, i (section.bar)}
-              {@const end = score.sections[i + 1]?.bar ?? score.barCount}
-              <button
-                type="button"
-                class="section absolute inset-y-1 flex cursor-default items-center gap-1 overflow-hidden rounded-[5px] px-1.5 font-medium"
-                style:left="{section.bar * CELL + 1}px"
-                style:width="{(end - section.bar) * CELL - 2}px"
-                title={section.name}
-                onclick={() => session.player?.seekToBar(section.bar)}
-              >
-                <BookmarkIcon class="size-3 shrink-0 fill-current opacity-60" />
-                <span class="truncate">{section.name}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
-
         <!-- Playhead, under the sticky track headers so it hides behind them when scrolled. -->
         <span
-          class="pointer-events-none absolute top-7 bottom-0 z-[5] w-px bg-primary transition-[left] duration-150"
+          class="pointer-events-none absolute top-14 bottom-0 z-[5] w-px bg-primary transition-[left] duration-150"
           style:left="{MIXER_WIDTH + playheadX}px"
         ></span>
       </div>
